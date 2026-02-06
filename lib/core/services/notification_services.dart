@@ -150,7 +150,7 @@ class NotificationServices {
           .collection('users')
           .doc(user.uid)
           .collection('devices')
-          .doc(token)
+          .doc(deviceInfo.deviceId)
           .set({
             ...deviceInfo.toMap(),
             'lastActiveAt': FieldValue.serverTimestamp(),
@@ -210,11 +210,12 @@ class NotificationServices {
         return;
       }
 
+      final deviceInfo = await getDeviceInfo();
       await _firestore
           .collection('users')
           .doc(user.uid)
           .collection('devices')
-          .doc(token)
+          .doc(deviceInfo.deviceId)
           .delete();
 
       _logger.i(

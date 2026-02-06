@@ -7,7 +7,7 @@ import 'package:get/get.dart';
 class AuthBinding {
   static Future<void> init() async {
     // ---- Datasources ----
-    Get.lazyPut<AuthRemoteDataSource>(() => AuthRemoteDataSource());
+    Get.lazyPut<AuthRemoteDataSource>(() => AuthRemoteDataSourceImpl());
 
     // ---- Repository ----
     Get.lazyPut<AuthRepositoryImpl>(() => AuthRepositoryImpl());

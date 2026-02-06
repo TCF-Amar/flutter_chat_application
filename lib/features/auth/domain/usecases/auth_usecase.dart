@@ -6,8 +6,8 @@ class AuthUsecase {
   final AuthRepositoryImpl repository;
 
   AuthUsecase({required this.repository});
-  Future<Result<void>> signIn(String email, String password) async {
-    return await repository.signIn(email, password);
+  Future<Result<UserEntity>> signIn({required String email, required String password}) async {
+    return await repository.signIn(email: email, password: password);
   }
 
   Future<Result<UserEntity>> signUp({
@@ -25,9 +25,7 @@ class AuthUsecase {
     return await repository.signOut();
   }
 
-  Future<Result<bool>> userExistsByPhone(String phone) async {
-    return await repository.userExistsByPhone(phone);
-  }
+  
 
   Future<Result<UserEntity>> updateUser(UserEntity user) async {
     return await repository.updateUser(user);

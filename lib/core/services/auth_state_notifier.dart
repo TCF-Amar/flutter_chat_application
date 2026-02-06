@@ -33,7 +33,7 @@ class AuthStateNotifier extends ChangeNotifier {
 
     if (currentUser != null) {
       _logger.i('User already signed in: ${currentUser.email}');
-      _initializeFcmToken();
+      // _initializeFcmToken();
       fetchUserProfile(currentUser.uid);
     }
 
@@ -41,7 +41,6 @@ class AuthStateNotifier extends ChangeNotifier {
     _authStateSubscription = _firebaseServices.auth.authStateChanges().listen((
       user,
     ) async {
-      final wasAuthenticated = _isAuthenticated;
       _isAuthenticated = user != null;
 
       _logger.i(
@@ -50,9 +49,9 @@ class AuthStateNotifier extends ChangeNotifier {
 
       // Initialize FCM token when user signs in
       if (user != null) {
-        if (!wasAuthenticated) {
-          await _initializeFcmToken();
-        }
+        // if (!wasAuthenticated) {
+        //   await _initializeFcmToken();
+        // }
         await fetchUserProfile(user.uid);
       } else {
         _isProfileCompleted = false;
@@ -77,6 +76,9 @@ class AuthStateNotifier extends ChangeNotifier {
           },
           (userEntity) {
             _isProfileCompleted = userEntity.isProfileCompleted;
+            if (_isProfileCompleted) {
+              _initializeFcmToken();
+            }
             _logger.i('User profile fetched. Completed: $_isProfileCompleted');
           },
         );

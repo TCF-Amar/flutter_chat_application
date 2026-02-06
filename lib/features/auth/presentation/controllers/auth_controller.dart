@@ -1,3 +1,4 @@
+import 'package:chat_kare/core/errors/failure.dart';
 import 'package:chat_kare/core/services/auth_state_notifier.dart';
 import 'package:chat_kare/core/services/firebase_services.dart';
 import 'package:chat_kare/features/auth/domain/entities/user_entity.dart';
@@ -24,6 +25,7 @@ class AuthController extends GetxController {
   @override
   void onInit() async {
     super.onInit();
+    // signOut();
     _logger.i('AuthController initialized');
 
     _authState.value = authStateNotifier.isAuthenticated;
@@ -55,8 +57,8 @@ class AuthController extends GetxController {
     _isLoading.value = true;
     _logger.i('Sign-in attempt for email: ${signInEmailController.text}');
     final result = await authUsecase.signIn(
-      signInEmailController.text,
-      signInPasswordController.text,
+      email: signInEmailController.text,
+      password: signInPasswordController.text,
     );
     result.fold(
       (failure) {
@@ -122,6 +124,10 @@ class AuthController extends GetxController {
     result.fold(
       (failure) async {
         _logger.e('Failed to fetch current user: ${failure.message}');
+        if (failure is UserNotFoundFailure) {
+          _logger.w('User document missing. Signing out to clean up state.');
+          await signOut();
+        }
       },
       (user) {
         _logger.i('Current user fetched successfully');
@@ -142,21 +148,7 @@ class AuthController extends GetxController {
     });
   }
 
-  Future<void> userExistsByPhone(String phone) async {
-    final res = await authUsecase.userExistsByPhone(phone);
-
-    res.fold(
-      (failure) {
-        _logger.e('User exists check failed: ${failure.message}');
-        _isPhoneExist.value = false;
-      },
-      (exists) {
-        _logger.i('User exists check successful: $exists');
-        _isPhoneExist.value = exists;
-      },
-    );
-  }
-
+  
   void clear() {
     _signInEmailController.clear();
     _signInPasswordController.clear();

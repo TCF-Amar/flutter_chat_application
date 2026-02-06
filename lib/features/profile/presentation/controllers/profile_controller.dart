@@ -1,4 +1,5 @@
 import 'package:chat_kare/core/services/auth_state_notifier.dart';
+import 'package:chat_kare/core/services/notification_services.dart';
 import 'package:chat_kare/features/auth/domain/usecases/auth_usecase.dart';
 import 'package:chat_kare/features/auth/presentation/controllers/auth_controller.dart';
 import 'package:flutter/material.dart';
@@ -12,6 +13,7 @@ class ProfileController extends GetxController {
   final Logger _logger = Logger();
 
   final TextEditingController nameController = TextEditingController();
+  final TextEditingController phoneController = TextEditingController();
   final GlobalKey<FormState> formKey = GlobalKey<FormState>();
 
   final RxBool _isLoading = false.obs;
@@ -37,7 +39,9 @@ class ProfileController extends GetxController {
 
     final updatedUser = currentUser.copyWith(
       displayName: nameController.text.trim(),
-      isProfileCompleted: true,
+      phoneNumber: phoneController.text.trim(),
+      isProfileCompleted:
+          nameController.text.isNotEmpty && phoneController.text.isNotEmpty,
     );
 
     final result = await _authUsecase.updateUser(updatedUser);
@@ -56,6 +60,11 @@ class ProfileController extends GetxController {
         _logger.i('Profile completed successfully');
         // Update local user state
         await _authStateNotifier.fetchUserProfile(user.uid);
+        try {
+          await Get.find<NotificationServices>().initializeFcmToken();
+        } catch (e) {
+          _logger.e('Failed to initialize FCM token: $e');
+        }
       },
     );
     _isLoading.value = false;
