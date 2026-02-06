@@ -1,0 +1,30 @@
+class RouteModels {
+  final String name;
+  final String path;
+
+  RouteModels({required this.name, required this.path});
+}
+
+class AppRoutes {
+  static final AppRoutes instance = AppRoutes._();
+  AppRoutes._();
+
+  static final RouteModels splash = RouteModels(name: 'splash', path: '/');
+  static final RouteModels signin = RouteModels(
+    name: 'signin',
+    path: '/signin',
+  );
+  static final RouteModels signup = RouteModels(
+    name: 'signup',
+    path: '/signup',
+  );
+  static final RouteModels home = RouteModels(name: 'home', path: '/home');
+  static final RouteModels addContact = RouteModels(
+    name: 'addContact',
+    path: '/addContact',
+  );
+  static final RouteModels profileComplete = RouteModels(
+    name: 'profileComplete',
+    path: '/profileComplete',
+  );
+}
