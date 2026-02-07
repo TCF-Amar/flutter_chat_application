@@ -1,4 +1,7 @@
 import 'package:chat_kare/core/services/auth_state_notifier.dart';
+
+import 'package:chat_kare/features/chat/presentation/pages/chat_page.dart';
+import 'package:chat_kare/features/contacts/domain/entities/contacts_entity.dart';
 import 'package:chat_kare/features/profile/presentation/pages/profile_complete_page.dart';
 import 'package:chat_kare/features/auth/presentation/pages/signin_page.dart';
 import 'package:chat_kare/features/auth/presentation/pages/signup_page.dart';
@@ -96,6 +99,14 @@ class AppRouter {
           name: AppRoutes.profileComplete.name,
           path: AppRoutes.profileComplete.path,
           builder: (context, state) => const ProfileCompletePage(),
+        ),
+        GoRoute(
+          name: AppRoutes.chat.name,
+          path: AppRoutes.chat.path,
+          builder: (context, state) {
+            final contact = state.extra as ContactsEntity;
+            return ChatPage(contact: contact);
+          },
         ),
       ],
     );

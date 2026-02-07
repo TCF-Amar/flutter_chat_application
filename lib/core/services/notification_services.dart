@@ -274,6 +274,7 @@ class NotificationServices {
       // or a backend server with Firebase Admin SDK. This is just a placeholder.
       // For now, we'll show a local notification as a demo
       await show(title: title, body: body);
+      
 
       _logger.i('Notification sent to user $userId');
     } catch (e) {

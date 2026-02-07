@@ -19,7 +19,10 @@ class AuthRepositoryImpl implements AuthRepository {
   final NotificationServices notificationServices = Get.find();
   final Logger _logger = Logger();
   @override
-  Future<Result<UserEntity>> signIn({required String email, required String password}) async {
+  Future<Result<UserEntity>> signIn({
+    required String email,
+    required String password,
+  }) async {
     try {
       _logger.i('Repository: Attempting sign-in for $email');
 
@@ -150,7 +153,6 @@ class AuthRepositoryImpl implements AuthRepository {
     }
   }
 
-  
   @override
   Future<Result<UserEntity>> updateUser(UserEntity user) async {
     try {
@@ -178,5 +180,6 @@ class AuthRepositoryImpl implements AuthRepository {
     }
   }
 
-  
+  @override
+  String? get currentUid => remoteDataSource.currentUid;
 }

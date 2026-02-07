@@ -115,21 +115,9 @@ class AuthController extends GetxController {
     }
 
     final result = await authUsecase.getUser(uid);
-    result.fold(
-      (failure) async {
-        AppSnackbar.error(
-          message: failure.message,
-          title: 'Failed to fetch current user',
-        );
-      },
-      (user) {
-        AppSnackbar.success(
-          message: 'Current user fetched successfully',
-          title: 'Success',
-        );
-        _currentUser.value = user;
-      },
-    );
+    result.fold((failure) {}, (user) {
+      _currentUser.value = user;
+    });
     _isLoading.value = false;
   }
 
@@ -139,6 +127,8 @@ class AuthController extends GetxController {
       _currentUser.value = null;
     });
   }
+
+  // get user by id
 
   void clear() {
     _signInEmailController.clear();

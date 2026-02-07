@@ -13,4 +13,5 @@ abstract class AuthRepository {
   Future<Result<UserEntity>> getUser(String uid);
   Future<Result<void>> signOut();
   Future<Result<void>> updateUser(UserEntity user);
+  String? get currentUid;
 }

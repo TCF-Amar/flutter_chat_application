@@ -18,6 +18,7 @@ abstract class AuthRemoteDataSource {
   Future<void> createUserDocument(UserModel user);
   Future<UserModel> getUser(String uid);
   Future<void> updateUserData(UserModel user);
+  String? get currentUid;
 }
 
 class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
@@ -117,8 +118,6 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     }
   }
 
-  
-
   @override
   Future<void> updateUserData(UserModel user) async {
     try {
@@ -147,4 +146,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       rethrow;
     }
   }
+
+  @override
+  String? get currentUid => fs.auth.currentUser?.uid;
 }

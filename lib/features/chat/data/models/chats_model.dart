@@ -1,25 +1,13 @@
 // chats/{chatId}/messages/{messageId}
-import 'package:chat_kare/features/chats/domain/entities/chats_entity.dart';
+import 'package:chat_kare/features/chat/domain/entities/chats_entity.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class ChatsModel extends ChatsEntity {
-  // final String id;
-  // final String chatId;
-  // final String senderId;
-  // final String senderName;
-  // final String? senderPhotoUrl;
-  // final String text;
-  // final MessageType type;
-  // final DateTime timestamp;
-  // final bool isRead;
-  // final List<String> readBy;
-  // final String? mediaUrl;
-  // final int? mediaSize;
-
   ChatsModel({
     required super.id,
     required super.chatId,
     required super.senderId,
+    required super.receiverId,
     required super.senderName,
     super.senderPhotoUrl,
     required super.text,
@@ -36,6 +24,7 @@ class ChatsModel extends ChatsEntity {
       id: json["id"],
       chatId: json["chatId"],
       senderId: json["senderId"],
+      receiverId: json["receiverId"],
       senderName: json["senderName"],
       senderPhotoUrl: json["senderPhotoUrl"],
       text: json["text"],
@@ -53,6 +42,7 @@ class ChatsModel extends ChatsEntity {
       "id": id,
       "chatId": chatId,
       "senderId": senderId,
+      "receiverId": receiverId,
       "senderName": senderName,
       "senderPhotoUrl": senderPhotoUrl,
       "text": text,
@@ -70,6 +60,7 @@ class ChatsModel extends ChatsEntity {
       id: id,
       chatId: chatId,
       senderId: senderId,
+      receiverId: receiverId,
       senderName: senderName,
       senderPhotoUrl: senderPhotoUrl,
       text: text,
@@ -79,6 +70,25 @@ class ChatsModel extends ChatsEntity {
       readBy: readBy,
       mediaUrl: mediaUrl,
       mediaSize: mediaSize,
+    );
+  }
+
+  // form entity
+  factory ChatsModel.fromEntity(ChatsEntity entity) {
+    return ChatsModel(
+      id: entity.id,
+      chatId: entity.chatId,
+      senderId: entity.senderId,
+      receiverId: entity.receiverId,
+      senderName: entity.senderName,
+      senderPhotoUrl: entity.senderPhotoUrl,
+      text: entity.text,
+      type: entity.type,
+      timestamp: entity.timestamp,
+      isRead: entity.isRead,
+      readBy: entity.readBy,
+      mediaUrl: entity.mediaUrl,
+      mediaSize: entity.mediaSize,
     );
   }
 }

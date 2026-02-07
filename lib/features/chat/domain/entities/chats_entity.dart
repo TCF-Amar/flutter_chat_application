@@ -2,6 +2,7 @@ class ChatsEntity {
   final String id;
   final String chatId;
   final String senderId;
+  final String receiverId;
   final String senderName;
   final String? senderPhotoUrl;
   final String text;
@@ -16,6 +17,7 @@ class ChatsEntity {
     required this.id,
     required this.chatId,
     required this.senderId,
+    required this.receiverId,
     required this.senderName,
     this.senderPhotoUrl,
     required this.text,

@@ -1,5 +1,5 @@
 import 'package:chat_kare/core/theme/theme_extensions.dart';
-import 'package:chat_kare/features/chats/presentation/pages/chats_page.dart';
+import 'package:chat_kare/features/chat/presentation/pages/chats_page.dart';
 import 'package:chat_kare/features/contacts/presentation/pages/contacts_page.dart';
 import 'package:chat_kare/features/home/presentation/controllers/home_controller.dart';
 import 'package:chat_kare/features/notifications/presentation/pages/notifications_page.dart';

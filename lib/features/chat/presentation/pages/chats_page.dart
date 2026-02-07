@@ -1,7 +1,8 @@
 import 'package:chat_kare/features/auth/presentation/controllers/auth_controller.dart';
 import 'package:chat_kare/core/theme/theme_extensions.dart';
-import 'package:chat_kare/features/chats/presentation/widgets/chat_tiles.dart';
-import 'package:chat_kare/features/chats/presentation/widgets/story_circle.dart';
+import 'package:chat_kare/features/chat/presentation/widgets/chat_tiles.dart';
+import 'package:chat_kare/features/chat/presentation/widgets/story_circle.dart';
+import 'package:chat_kare/features/contacts/presentation/controllers/contacts_controller.dart';
 import 'package:chat_kare/features/home/presentation/controllers/home_controller.dart';
 import 'package:chat_kare/features/shared/widgets/default_app_bar.dart';
 import 'package:chat_kare/features/shared/widgets/index.dart';
@@ -14,6 +15,7 @@ class ChatsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final controller = Get.find<HomeController>();
+    final contactsController = Get.find<ContactsController>();
     return AppScaffold(
       appBar: DefaultAppBar(
         title: "Messages",
@@ -117,10 +119,11 @@ class ChatsPage extends StatelessWidget {
                   ),
                   ListView.builder(
                     shrinkWrap: true,
-                    itemCount: 100,
+                    itemCount: contactsController.contacts.length,
                     physics: const NeverScrollableScrollPhysics(),
                     itemBuilder: (context, index) {
-                      return const ChatTiles();
+                      final contact = contactsController.contacts[index];
+                      return ChatTiles(contact: contact);
                     },
                   ),
                 ],
