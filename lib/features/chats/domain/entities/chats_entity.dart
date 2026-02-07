@@ -1,0 +1,55 @@
+class ChatsEntity {
+  final String id;
+  final String chatId;
+  final String senderId;
+  final String senderName;
+  final String? senderPhotoUrl;
+  final String text;
+  final MessageType type;
+  final DateTime timestamp;
+  final bool isRead;
+  final List<String> readBy;
+  final String? mediaUrl;
+  final int? mediaSize;
+
+  ChatsEntity({
+    required this.id,
+    required this.chatId,
+    required this.senderId,
+    required this.senderName,
+    this.senderPhotoUrl,
+    required this.text,
+    this.type = MessageType.text,
+    required this.timestamp,
+    this.isRead = false,
+    this.readBy = const [],
+    this.mediaUrl,
+    this.mediaSize,
+  });
+}
+
+enum MessageType { text, image, video, audio, document }
+
+class ChatMetadataEntity {
+  final String id;
+  final List<String> participants;
+  final String? lastMessage;
+  final DateTime? lastMessageTime;
+  final String? lastMessageSenderId;
+  final int unreadCount;
+  final DateTime createdAt;
+  final ChatType type;
+
+  ChatMetadataEntity({
+    required this.id,
+    required this.participants,
+    this.lastMessage,
+    this.lastMessageTime,
+    this.lastMessageSenderId,
+    this.unreadCount = 0,
+    required this.createdAt,
+    this.type = ChatType.direct,
+  });
+}
+
+enum ChatType { direct, group }

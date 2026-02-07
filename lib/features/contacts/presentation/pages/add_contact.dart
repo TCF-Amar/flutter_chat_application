@@ -6,7 +6,6 @@ import 'package:chat_kare/features/shared/widgets/app_text_form_field.dart';
 import 'package:chat_kare/features/shared/widgets/default_app_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:go_router/go_router.dart';
 
 class AddContact extends StatelessWidget {
   const AddContact({super.key});
@@ -14,6 +13,7 @@ class AddContact extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final controller = Get.find<ContactsController>();
+
     return AppScaffold(
       appBar: DefaultAppBar(title: "Add Contact"),
       body: SingleChildScrollView(
@@ -36,19 +36,19 @@ class AddContact extends StatelessWidget {
                   focusNode: controller.contactInfoFocusNode,
                   prefixIcon:
                       controller.textInputType.value ==
-                          TextInputType.emailAddress
+                          controller.inputTypeEmail
                       ? Icon(Icons.alternate_email)
                       : Icon(Icons.numbers),
                   hint:
                       controller.textInputType.value ==
-                          TextInputType.emailAddress
+                          controller.inputTypeEmail
                       ? "Email"
                       : "Phone Number",
                   keyboardType: controller.textInputType.value,
                   suffixIcon: IconButton(
                     icon:
                         controller.textInputType.value ==
-                            TextInputType.emailAddress
+                            controller.inputTypeEmail
                         ? Icon(Icons.keyboard_alt)
                         : Icon(Icons.phone_android),
                     onPressed: () {
@@ -59,8 +59,8 @@ class AddContact extends StatelessWidget {
               ),
               SizedBox(height: 20),
               AppButton(
-                onPressed: () {
-                  context.pop();
+                onPressed: () async {
+                  await controller.addContact(context);
                 },
                 child: AppText("Add Contact"),
               ),

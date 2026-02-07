@@ -1,0 +1,14 @@
+{
+   "cSpell.words": ["Getx"],
+  "[codeblock]": {
+    "files.encoding": "windows1252"
+  },
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.formatOnSave": true,
+  "prettier.tabWidth": 2,
+  "prettier.printWidth": 120,
+  "prettier.trailingComma": "all",
+  "[dart]": {
+    "editor.defaultFormatter": "awesome-codebase.codebase-dart-pro"
+  }
+}

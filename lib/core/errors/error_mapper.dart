@@ -57,6 +57,9 @@ Failure mapExceptionToFailure(Exception exception) {
   if (exception is DuplicateDataException) {
     return DuplicateDataFailure(exception.message);
   }
+  if (exception is DuplicateContactException) {
+    return DuplicateDataFailure(exception.message);
+  }
 
   // Validation Exceptions
   if (exception is ValidationException) {

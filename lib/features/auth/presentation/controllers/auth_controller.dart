@@ -1,17 +1,15 @@
-import 'package:chat_kare/core/errors/failure.dart';
 import 'package:chat_kare/core/services/auth_state_notifier.dart';
 import 'package:chat_kare/core/services/firebase_services.dart';
 import 'package:chat_kare/features/auth/domain/entities/user_entity.dart';
 import 'package:chat_kare/features/auth/domain/usecases/auth_usecase.dart';
+import 'package:chat_kare/features/shared/widgets/app_snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:logger/logger.dart';
 
 class AuthController extends GetxController {
   final FirebaseServices firebaseServices = Get.find<FirebaseServices>();
   final AuthUsecase authUsecase = Get.find<AuthUsecase>();
   final AuthStateNotifier authStateNotifier = Get.find<AuthStateNotifier>();
-  final Logger _logger = Logger();
 
   final Rx<bool?> _authState = Rx<bool?>(null);
   bool? get authState => _authState.value;
@@ -25,9 +23,10 @@ class AuthController extends GetxController {
   @override
   void onInit() async {
     super.onInit();
-    // signOut();
-    _logger.i('AuthController initialized');
+    _init();
+  }
 
+  void _init() async {
     _authState.value = authStateNotifier.isAuthenticated;
 
     if (authStateNotifier.isAuthenticated) {
@@ -55,26 +54,29 @@ class AuthController extends GetxController {
 
   Future<void> signIn() async {
     _isLoading.value = true;
-    _logger.i('Sign-in attempt for email: ${signInEmailController.text}');
     final result = await authUsecase.signIn(
       email: signInEmailController.text,
       password: signInPasswordController.text,
     );
     result.fold(
       (failure) {
+        AppSnackbar.authError(
+          message: "Invalid credential",
+          title: 'Sign-in failed',
+        );
         _isLoading.value = false;
-        _logger.e('Sign-in failed: ${failure.message}');
       },
       (_) {
+        AppSnackbar.success(
+          message: 'Sign-in successful for: ${signInEmailController.text}',
+          title: 'Success',
+        );
         _isLoading.value = false;
-        _logger.i('Sign-in successful for: ${signInEmailController.text}');
       },
     );
   }
 
   // Sign up
-  // final _signUpFormKey = GlobalKey<FormState>();
-  // GlobalKey<FormState> get signUpFormKey => _signUpFormKey;
   final _signUpEmailController = TextEditingController();
   TextEditingController get signUpEmailController => _signUpEmailController;
   final _signUpPasswordController = TextEditingController();
@@ -83,16 +85,12 @@ class AuthController extends GetxController {
   final _signUpConfirmPasswordController = TextEditingController();
   TextEditingController get signUpConfirmPasswordController =>
       _signUpConfirmPasswordController;
-  // final _signUpDisplayNameController = TextEditingController();
-  // TextEditingController get signUpDisplayNameController =>
-  //     _signUpDisplayNameController;
 
   final RxBool _isPhoneExist = RxBool(false);
   bool get isPhoneExist => _isPhoneExist.value;
 
   Future<void> signUp() async {
     _isLoading.value = true;
-    _logger.i('Sign-up attempt for email: ${signUpEmailController.text}');
 
     final result = await authUsecase.signUp(
       email: signUpEmailController.text,
@@ -101,12 +99,10 @@ class AuthController extends GetxController {
     result.fold(
       (failure) {
         _isLoading.value = false;
-        _logger.e('Sign-up failed: ${failure.message}');
       },
       (user) {
         _currentUser.value = user;
         _isLoading.value = false;
-        _logger.i('Sign-up successful for: ${signUpEmailController.text}');
       },
     );
   }
@@ -115,22 +111,22 @@ class AuthController extends GetxController {
     _isLoading.value = true;
     final uid = firebaseServices.auth.currentUser?.uid;
     if (uid == null) {
-      _logger.w('Cannot get current user: No user authenticated');
       return;
     }
 
-    _logger.i('Fetching current user data for uid: $uid');
     final result = await authUsecase.getUser(uid);
     result.fold(
       (failure) async {
-        _logger.e('Failed to fetch current user: ${failure.message}');
-        if (failure is UserNotFoundFailure) {
-          _logger.w('User document missing. Signing out to clean up state.');
-          await signOut();
-        }
+        AppSnackbar.error(
+          message: failure.message,
+          title: 'Failed to fetch current user',
+        );
       },
       (user) {
-        _logger.i('Current user fetched successfully');
+        AppSnackbar.success(
+          message: 'Current user fetched successfully',
+          title: 'Success',
+        );
         _currentUser.value = user;
       },
     );
@@ -138,24 +134,18 @@ class AuthController extends GetxController {
   }
 
   Future<void> signOut() async {
-    _logger.i('Sign-out attempt');
     final result = await authUsecase.signOut();
-    result.fold((failure) => _logger.e('Sign-out failed: ${failure.message}'), (
-      _,
-    ) {
-      _logger.i('Sign-out successful');
+    result.fold((failure) {}, (_) {
       _currentUser.value = null;
     });
   }
 
-  
   void clear() {
     _signInEmailController.clear();
     _signInPasswordController.clear();
     _signUpEmailController.clear();
     _signUpPasswordController.clear();
     _signUpConfirmPasswordController.clear();
-    // _signUpDisplayNameController.clear();
   }
 
   @override
@@ -165,7 +155,6 @@ class AuthController extends GetxController {
     _signUpEmailController.dispose();
     _signUpPasswordController.dispose();
     _signUpConfirmPasswordController.dispose();
-    // _signUpDisplayNameController.dispose();
     super.onClose();
   }
 }

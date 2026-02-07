@@ -1,31 +1,97 @@
+import 'package:chat_kare/main.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-/// Predefined snackbar types and custom snackbar builder
+/// Predefined snackbar types and custom snackbar builder using ScaffoldMessenger
 class AppSnackbar {
   // Private constructor to prevent instantiation
   AppSnackbar._();
+
+  static void _show({
+    required String message,
+    String? title,
+    Color? backgroundColor,
+    Color? textColor,
+    Widget? icon,
+    Duration duration = const Duration(seconds: 3),
+    SnackBarAction? action,
+    bool showProgressIndicator = false,
+  }) {
+    // Use the global key for reliability
+    final messengerState = rootScaffoldMessengerKey.currentState;
+    if (messengerState == null) return;
+
+    final snackBar = SnackBar(
+      content: Row(
+        children: [
+          if (icon != null) ...[icon, const SizedBox(width: 12)],
+          if (showProgressIndicator) ...[
+            const SizedBox(
+              width: 24,
+              height: 24,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+              ),
+            ),
+            const SizedBox(width: 12),
+          ],
+          Expanded(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (title != null && title.isNotEmpty)
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                      color: textColor ?? Colors.white,
+                    ),
+                  ),
+                if (title != null && title.isNotEmpty)
+                  const SizedBox(height: 4),
+                Text(
+                  message,
+                  style: TextStyle(
+                    color: textColor ?? Colors.white,
+                    fontSize: 14,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+      backgroundColor: backgroundColor ?? const Color(0xFF323232),
+      duration: duration,
+      behavior: SnackBarBehavior.floating,
+      margin: const EdgeInsets.all(16),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      dismissDirection: DismissDirection.horizontal,
+      action: action,
+    );
+
+    messengerState
+      ..hideCurrentSnackBar()
+      ..showSnackBar(snackBar);
+  }
 
   /// Show success snackbar
   static void success({
     required String message,
     String title = 'Success',
     int duration = 3,
-    SnackPosition position = SnackPosition.TOP,
+    SnackPosition position = SnackPosition
+        .BOTTOM, // Material SnackBar calls are always bottom by default
   }) {
-    Get.snackbar(
-      title,
-      message,
-      snackPosition: position,
+    _show(
+      message: message,
+      title: title,
       backgroundColor: const Color(0xFF4CAF50),
-      colorText: Colors.white,
       icon: const Icon(Icons.check_circle, color: Colors.white),
       duration: Duration(seconds: duration),
-      margin: const EdgeInsets.all(16),
-      borderRadius: 12,
-      isDismissible: true,
-      dismissDirection: DismissDirection.horizontal,
-      forwardAnimationCurve: Curves.easeOutBack,
     );
   }
 
@@ -34,21 +100,14 @@ class AppSnackbar {
     required String message,
     String title = 'Error',
     int duration = 4,
-    SnackPosition position = SnackPosition.TOP,
+    SnackPosition position = SnackPosition.BOTTOM,
   }) {
-    Get.snackbar(
-      title,
-      message,
-      snackPosition: position,
+    _show(
+      message: message,
+      title: title,
       backgroundColor: const Color(0xFFF44336),
-      colorText: Colors.white,
       icon: const Icon(Icons.error, color: Colors.white),
       duration: Duration(seconds: duration),
-      margin: const EdgeInsets.all(16),
-      borderRadius: 12,
-      isDismissible: true,
-      dismissDirection: DismissDirection.horizontal,
-      forwardAnimationCurve: Curves.easeOutBack,
     );
   }
 
@@ -57,21 +116,14 @@ class AppSnackbar {
     required String message,
     String title = 'Warning',
     int duration = 3,
-    SnackPosition position = SnackPosition.TOP,
+    SnackPosition position = SnackPosition.BOTTOM,
   }) {
-    Get.snackbar(
-      title,
-      message,
-      snackPosition: position,
+    _show(
+      message: message,
+      title: title,
       backgroundColor: const Color(0xFFFF9800),
-      colorText: Colors.white,
       icon: const Icon(Icons.warning, color: Colors.white),
       duration: Duration(seconds: duration),
-      margin: const EdgeInsets.all(16),
-      borderRadius: 12,
-      isDismissible: true,
-      dismissDirection: DismissDirection.horizontal,
-      forwardAnimationCurve: Curves.easeOutBack,
     );
   }
 
@@ -80,21 +132,14 @@ class AppSnackbar {
     required String message,
     String title = 'Info',
     int duration = 3,
-    SnackPosition position = SnackPosition.TOP,
+    SnackPosition position = SnackPosition.BOTTOM,
   }) {
-    Get.snackbar(
-      title,
-      message,
-      snackPosition: position,
+    _show(
+      message: message,
+      title: title,
       backgroundColor: const Color(0xFF2196F3),
-      colorText: Colors.white,
       icon: const Icon(Icons.info, color: Colors.white),
       duration: Duration(seconds: duration),
-      margin: const EdgeInsets.all(16),
-      borderRadius: 12,
-      isDismissible: true,
-      dismissDirection: DismissDirection.horizontal,
-      forwardAnimationCurve: Curves.easeOutBack,
     );
   }
 
@@ -104,36 +149,17 @@ class AppSnackbar {
     String title = 'Loading',
     SnackPosition position = SnackPosition.BOTTOM,
   }) {
-    Get.snackbar(
-      title,
-      message,
-      snackPosition: position,
+    _show(
+      message: message,
+      title: title,
       backgroundColor: const Color(0xFF607D8B),
-      colorText: Colors.white,
-      icon: const SizedBox(
-        width: 24,
-        height: 24,
-        child: CircularProgressIndicator(
-          strokeWidth: 2,
-          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-        ),
-      ),
-      duration: const Duration(days: 1), // Indefinite
-      margin: const EdgeInsets.all(16),
-      borderRadius: 12,
-      isDismissible: false,
-      showProgressIndicator: false,
+      duration: const Duration(days: 1), // Indefinite, requires manual dismiss
+      showProgressIndicator: true,
     );
   }
 
   static void dismiss() {
-    try {
-      if (Get.isSnackbarOpen) {
-        Get.closeAllSnackbars();
-      }
-    } catch (e) {
-      // Ignore errors if snackbar controller is not initialized
-    }
+    rootScaffoldMessengerKey.currentState?.hideCurrentSnackBar();
   }
 
   static void custom({
@@ -143,28 +169,34 @@ class AppSnackbar {
     Color? textColor,
     Widget? icon,
     int duration = 3,
-    SnackPosition position = SnackPosition.TOP,
+    SnackPosition position = SnackPosition.BOTTOM,
     EdgeInsets? margin,
     double? borderRadius,
     bool isDismissible = true,
     VoidCallback? onTap,
-    TextButton? mainButton,
+    TextButton?
+    mainButton, // This might need adaptation if TextButton is passed, but SnackBarAction is preferred
   }) {
-    Get.snackbar(
-      title,
-      message,
-      snackPosition: position,
-      backgroundColor: backgroundColor ?? const Color(0xFF323232),
-      colorText: textColor ?? Colors.white,
+    // Adapter for mainButton to SnackBarAction if possible, or just ignore for now as custom is complex
+    SnackBarAction? action;
+    if (mainButton != null &&
+        mainButton.onPressed != null &&
+        mainButton.child is Text) {
+      action = SnackBarAction(
+        label: (mainButton.child as Text).data ?? 'ACTION',
+        onPressed: mainButton.onPressed!,
+        textColor: Colors.white,
+      );
+    }
+
+    _show(
+      message: message,
+      title: title,
+      backgroundColor: backgroundColor,
+      textColor: textColor,
       icon: icon,
       duration: Duration(seconds: duration),
-      margin: margin ?? const EdgeInsets.all(16),
-      borderRadius: borderRadius ?? 12,
-      isDismissible: isDismissible,
-      dismissDirection: DismissDirection.horizontal,
-      forwardAnimationCurve: Curves.easeOutBack,
-      onTap: onTap != null ? (_) => onTap() : null,
-      mainButton: mainButton,
+      action: action,
     );
   }
 
@@ -178,28 +210,15 @@ class AppSnackbar {
     int duration = 5,
     SnackPosition position = SnackPosition.BOTTOM,
   }) {
-    Get.snackbar(
-      title,
-      message,
-      snackPosition: position,
-      backgroundColor: backgroundColor ?? const Color(0xFF323232),
-      colorText: Colors.white,
+    _show(
+      message: message,
+      title: title,
+      backgroundColor: backgroundColor,
       duration: Duration(seconds: duration),
-      margin: const EdgeInsets.all(16),
-      borderRadius: 12,
-      isDismissible: true,
-      mainButton: TextButton(
-        onPressed: () {
-          Get.closeCurrentSnackbar();
-          onActionPressed();
-        },
-        child: Text(
-          actionLabel,
-          style: const TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
+      action: SnackBarAction(
+        label: actionLabel,
+        onPressed: onActionPressed,
+        textColor: Colors.white,
       ),
     );
   }
@@ -208,32 +227,21 @@ class AppSnackbar {
   static void networkError({
     String message = 'No internet connection. Please check your network.',
     VoidCallback? onRetry,
-    SnackPosition position = SnackPosition.TOP,
+    SnackPosition position = SnackPosition.BOTTOM,
   }) {
-    Get.snackbar(
-      'Network Error',
-      message,
-      snackPosition: position,
+    _show(
+      message: message,
+      title: 'Network Error',
       backgroundColor: const Color(0xFFD32F2F),
-      colorText: Colors.white,
       icon: const Icon(Icons.wifi_off, color: Colors.white),
-      duration: const Duration(seconds: 5),
-      margin: const EdgeInsets.all(16),
-      borderRadius: 12,
-      isDismissible: true,
-      mainButton: onRetry != null
-          ? TextButton(
-              onPressed: () {
-                Get.closeCurrentSnackbar();
-                onRetry();
-              },
-              child: const Text(
-                'RETRY',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
+      duration: onRetry != null
+          ? const Duration(seconds: 10)
+          : const Duration(seconds: 5),
+      action: onRetry != null
+          ? SnackBarAction(
+              label: 'RETRY',
+              onPressed: onRetry,
+              textColor: Colors.white,
             )
           : null,
     );
@@ -243,19 +251,14 @@ class AppSnackbar {
   static void validationError({
     required String message,
     String title = 'Validation Error',
-    SnackPosition position = SnackPosition.TOP,
+    SnackPosition position = SnackPosition.BOTTOM,
   }) {
-    Get.snackbar(
-      title,
-      message,
-      snackPosition: position,
+    _show(
+      message: message,
+      title: title,
       backgroundColor: const Color(0xFFE91E63),
-      colorText: Colors.white,
       icon: const Icon(Icons.error_outline, color: Colors.white),
       duration: const Duration(seconds: 3),
-      margin: const EdgeInsets.all(16),
-      borderRadius: 12,
-      isDismissible: true,
     );
   }
 
@@ -263,19 +266,14 @@ class AppSnackbar {
   static void authError({
     required String message,
     String title = 'Authentication Failed',
-    SnackPosition position = SnackPosition.TOP,
+    SnackPosition position = SnackPosition.BOTTOM,
   }) {
-    Get.snackbar(
-      title,
-      message,
-      snackPosition: position,
+    _show(
+      message: message,
+      title: title,
       backgroundColor: const Color(0xFFD32F2F),
-      colorText: Colors.white,
       icon: const Icon(Icons.lock_outline, color: Colors.white),
       duration: const Duration(seconds: 4),
-      margin: const EdgeInsets.all(16),
-      borderRadius: 12,
-      isDismissible: true,
     );
   }
 
@@ -283,19 +281,14 @@ class AppSnackbar {
   static void serverError({
     String message = 'Something went wrong. Please try again later.',
     String title = 'Server Error',
-    SnackPosition position = SnackPosition.TOP,
+    SnackPosition position = SnackPosition.BOTTOM,
   }) {
-    Get.snackbar(
-      title,
-      message,
-      snackPosition: position,
+    _show(
+      message: message,
+      title: title,
       backgroundColor: const Color(0xFF9C27B0),
-      colorText: Colors.white,
       icon: const Icon(Icons.cloud_off, color: Colors.white),
       duration: const Duration(seconds: 4),
-      margin: const EdgeInsets.all(16),
-      borderRadius: 12,
-      isDismissible: true,
     );
   }
 }

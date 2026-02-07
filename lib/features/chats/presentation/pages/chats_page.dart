@@ -1,3 +1,4 @@
+import 'package:chat_kare/features/auth/presentation/controllers/auth_controller.dart';
 import 'package:chat_kare/core/theme/theme_extensions.dart';
 import 'package:chat_kare/features/chats/presentation/widgets/chat_tiles.dart';
 import 'package:chat_kare/features/chats/presentation/widgets/story_circle.dart';
@@ -18,7 +19,35 @@ class ChatsPage extends StatelessWidget {
         title: "Messages",
         leading: IconButton(onPressed: () {}, icon: const Icon(Icons.search)),
         actions: [
-          IconButton(onPressed: () {}, icon: const Icon(Icons.more_vert)),
+          PopupMenuButton<String>(
+            onSelected: (value) {
+              if (value == 'logout') {
+                Get.find<AuthController>().signOut();
+              }
+            },
+            itemBuilder: (BuildContext context) {
+              return [
+                const PopupMenuItem(
+                  value: 'new_group',
+                  child: Text('New Group'),
+                ),
+                const PopupMenuItem(
+                  value: 'new_broadcast',
+                  child: Text('New Broadcast'),
+                ),
+                const PopupMenuItem(
+                  value: 'linked_devices',
+                  child: Text('Linked Devices'),
+                ),
+                const PopupMenuItem(
+                  value: 'starred_messages',
+                  child: Text('Starred Messages'),
+                ),
+                const PopupMenuItem(value: 'settings', child: Text('Settings')),
+                const PopupMenuItem(value: 'logout', child: Text('Logout')),
+              ];
+            },
+          ),
         ],
       ),
       floatingActionButton: Column(

@@ -206,3 +206,8 @@ class StorageException implements Exception {
   final String message;
   StorageException(this.message);
 }
+
+class DuplicateContactException implements Exception {
+  final String message;
+  DuplicateContactException(this.message);
+}
