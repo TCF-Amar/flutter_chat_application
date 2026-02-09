@@ -4,7 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 class ContactsModel extends ContactsEntity {
   const ContactsModel({
     required super.id,
-    super.name,
+    required super.name,
     super.email,
     super.phoneNumber,
     super.photoUrl,

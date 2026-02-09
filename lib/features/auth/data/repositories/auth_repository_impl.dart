@@ -113,6 +113,33 @@ class AuthRepositoryImpl implements AuthRepository {
       _logger.i('Repository: User fetched successfully');
 
       return Right(userModel.toEntity());
+    } on UserNotFoundException {
+      // If user document doesn't exist but user is authenticated (which is likely if we have the uid)
+      // we should create the user document
+      _logger.w(
+        'Repository: User document not found for uid: $uid. Creating new document.',
+      );
+
+      final currentUser = fs.auth.currentUser;
+      if (currentUser != null && currentUser.uid == uid) {
+        final userModel = UserModel(
+          uid: uid,
+          email: currentUser.email!,
+          displayName: currentUser.displayName,
+          photoUrl: currentUser.photoURL,
+          phoneNumber: currentUser.phoneNumber,
+          isProfileCompleted: false,
+        );
+
+        try {
+          await remoteDataSource.createUserDocument(userModel);
+          return Right(userModel.toEntity());
+        } catch (e) {
+          return Left(mapExceptionToFailure(Exception(e.toString())));
+        }
+      } else {
+        return Left(mapExceptionToFailure(Exception('User not found')));
+      }
     } on FirebaseException catch (e) {
       _logger.e(
         'Repository: Failed to fetch user - FirebaseException: ${e.message}',

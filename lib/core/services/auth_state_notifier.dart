@@ -2,19 +2,18 @@ import 'dart:async';
 import 'package:chat_kare/core/services/firebase_services.dart';
 import 'package:chat_kare/core/services/notification_services.dart';
 import 'package:chat_kare/features/auth/data/repositories/auth_repository_impl.dart';
+import 'package:chat_kare/features/auth/domain/entities/user_entity.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import 'package:logger/logger.dart';
 
-/// Notifies listeners when Firebase auth state changes.
-/// Used by GoRouter's refreshListenable to trigger navigation updates.
 class AuthStateNotifier extends ChangeNotifier {
   final FirebaseServices _firebaseServices;
   final Logger _logger = Logger();
   late final StreamSubscription<User?> _authStateSubscription;
 
-  User? user;
+  UserEntity? user;
   bool _isAuthenticated = false;
   bool _isProfileCompleted = false;
   bool get isProfileCompleted => _isProfileCompleted;
@@ -73,8 +72,10 @@ class AuthStateNotifier extends ChangeNotifier {
           (failure) {
             _logger.e('Failed to fetch user profile: ${failure.message}');
             _isProfileCompleted = false;
+            user = null; // Clear userEntity on failure
           },
           (userEntity) {
+            user = userEntity; // Update userEntity
             _isProfileCompleted = userEntity.isProfileCompleted;
             if (_isProfileCompleted) {
               _initializeFcmToken();

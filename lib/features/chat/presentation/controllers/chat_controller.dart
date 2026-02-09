@@ -7,6 +7,9 @@ import 'package:chat_kare/features/chat/domain/repositories/chats_repository.dar
 import 'package:chat_kare/core/services/notification_services.dart';
 import 'package:chat_kare/features/contacts/domain/entities/contacts_entity.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+
+import 'package:chat_kare/core/services/auth_state_notifier.dart';
 import 'package:get/get.dart';
 
 class ChatController extends GetxController {
@@ -14,9 +17,10 @@ class ChatController extends GetxController {
   final ChatsRepository chatsRepository;
   final NotificationServices notificationService;
   final AuthUsecase authUsecase;
+  final AuthStateNotifier authStateNotifier; // Injected
   final FirebaseServices fs = Get.find();
 
-  ChatController({required this.contact})
+  ChatController({required this.contact, required this.authStateNotifier})
     : chatsRepository = Get.find(),
       notificationService = Get.find(),
       authUsecase = Get.find();
@@ -180,6 +184,10 @@ class ChatController extends GetxController {
   }
 
   Future<void> sendMessage() async {
+    if (editingMessageId.value != null) {
+      await editMessage();
+      return;
+    }
     final text = messageController.text.trim();
     if (text.isEmpty) return;
     messageController.clear();
@@ -194,20 +202,30 @@ class ChatController extends GetxController {
 
     final messageId = DateTime.now().millisecondsSinceEpoch.toString();
 
+    final replyTo = replyMessage.value;
+
     final message = ChatsEntity(
       id: messageId,
       chatId: chatId,
       senderId: currentUserId,
       receiverId: contact.id,
-      senderName: currentUser.displayName ?? currentUser.email ?? 'Unknown',
-      senderPhotoUrl: currentUser.photoURL,
+      senderName: authStateNotifier.user?.displayName ?? 'Unknown',
+      senderPhotoUrl: authStateNotifier.user?.photoUrl ?? currentUser.photoURL,
+      receiverName: contact.name,
       text: text,
       type: MessageType.text,
       timestamp: DateTime.now(),
       isRead: false,
       readBy: const [],
       status: MessageStatus.sending,
+      replyToMessageId: replyTo?.id,
+      replyToSenderName: replyTo?.senderName,
+      replyToText: replyTo?.text,
+      replyToType: replyTo?.type,
     );
+
+    // Clear reply state
+    cancelReply();
 
     // Optimistic update
     messages.add(message);
@@ -229,6 +247,116 @@ class ChatController extends GetxController {
     );
   }
 
+  final Rx<String?> editingMessageId = Rx<String?>(null);
+
+  void startEditing(ChatsEntity message) {
+    editingMessageId.value = message.id;
+    messageController.text = message.text;
+    messageFocusNode.requestFocus();
+  }
+
+  void cancelEditing() {
+    editingMessageId.value = null;
+    messageController.clear();
+    messageFocusNode.unfocus();
+  }
+
+  final Rx<ChatsEntity?> replyMessage = Rx<ChatsEntity?>(null);
+
+  void replyToMessage(ChatsEntity message) {
+    replyMessage.value = message;
+    messageFocusNode.requestFocus();
+  }
+
+  void cancelReply() {
+    replyMessage.value = null;
+  }
+
+  Future<void> editMessage() async {
+    final messageId = editingMessageId.value;
+    if (messageId == null) return;
+
+    final text = messageController.text.trim();
+    if (text.isEmpty) return;
+
+    // Optimistic update
+    final index = messages.indexWhere((m) => m.id == messageId);
+    if (index != -1) {
+      final oldMessage = messages[index];
+
+      // If text hasn't changed, just cancel editing
+      if (oldMessage.text == text) {
+        cancelEditing();
+        return;
+      }
+
+      messages[index] = ChatsEntity(
+        id: oldMessage.id,
+        chatId: oldMessage.chatId,
+        senderId: oldMessage.senderId,
+        receiverId: oldMessage.receiverId,
+        senderName: oldMessage.senderName,
+        receiverName: oldMessage.receiverName,
+        senderPhotoUrl: oldMessage.senderPhotoUrl,
+        text: text,
+        type: oldMessage.type,
+        timestamp: oldMessage.timestamp,
+        isRead: oldMessage.isRead,
+        readBy: oldMessage.readBy,
+        status: oldMessage.status,
+        isEdited: true,
+      );
+    }
+
+    cancelEditing();
+
+    final result = await chatsRepository.editMessage(
+      chatId: chatId,
+      messageId: messageId,
+      text: text,
+    );
+
+    result.fold((failure) {
+      errorMessage.value = 'Failed to edit message';
+      Get.snackbar('Error', 'Failed to edit message');
+      // Revert optimistic update if needed, or just let stream refresh handle it
+    }, (_) => null);
+  }
+
+  // selected chat
+  // ------------------------------------------------------
+
+  final RxList<String> selectedMessages = <String>[].obs;
+
+  void toggleMessageSelection(String messageId) {
+    if (selectedMessages.contains(messageId)) {
+      selectedMessages.remove(messageId);
+    } else {
+      selectedMessages.add(messageId);
+    }
+  }
+
+  void clearSelection() {
+    selectedMessages.clear();
+  }
+
+  void deleteSelectedMessages() {
+    Get.snackbar('Delete', 'Deleted ${selectedMessages.length} messages');
+    clearSelection();
+  }
+
+  void copySelectedMessages() {
+    final selectedText = messages
+        .where((m) => selectedMessages.contains(m.id))
+        .map((m) => m.text)
+        .join('\n');
+    Clipboard.setData(ClipboardData(text: selectedText));
+    Get.snackbar('Copy', 'Copied to clipboard');
+    clearSelection();
+  }
+
+  // ------------------------------------------------------
+
   Future<void> refreshMessages() async {
     await _bindMessagesStream();
   }
@@ -238,27 +366,27 @@ class ChatController extends GetxController {
   }
 
   void searchMessages(String query) {
-    // Implement search functionality
+    // isme chat search ki functionality add karni hai
   }
 
   void takePhoto() async {
-    // Implement camera functionality
+    // isme camera ki functionality add karni hai
   }
 
   void pickImageFromGallery() async {
-    // Implement gallery picker
+    // isme gallery ki functionality add karni hai
   }
 
   void pickDocument() async {
-    // Implement document picker
+    // isme document ki functionality add karni hai
   }
 
   void shareLocation() async {
-    // Implement location sharing
+    // isme location ki functionality add karni hai
   }
 
   void blockUser() async {
-    // Implement block user functionality
+    // isme block user ki functionality add karni hai
   }
 
   void toggleMuteNotifications() {
@@ -295,7 +423,6 @@ class ChatController extends GetxController {
     final currentUserId = Get.find<AuthUsecase>().currentUid;
     if (currentUserId == null) return '';
 
-    // Sort IDs to ensure consistent chat ID
     final sortedIds = [currentUserId, contact.id]..sort();
     return 'chat_${sortedIds[0]}_${sortedIds[1]}';
   }

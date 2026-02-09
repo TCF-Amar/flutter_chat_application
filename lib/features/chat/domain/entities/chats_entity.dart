@@ -4,6 +4,7 @@ class ChatsEntity {
   final String senderId;
   final String receiverId;
   final String senderName;
+  final String receiverName;
   final String? senderPhotoUrl;
   final String text;
   final MessageType type;
@@ -13,6 +14,11 @@ class ChatsEntity {
   final String? mediaUrl;
   final int? mediaSize;
   final MessageStatus status;
+  final bool isEdited;
+  final String? replyToMessageId;
+  final String? replyToSenderName;
+  final String? replyToText;
+  final MessageType? replyToType;
 
   ChatsEntity({
     required this.id,
@@ -20,6 +26,7 @@ class ChatsEntity {
     required this.senderId,
     required this.receiverId,
     required this.senderName,
+    required this.receiverName,
     this.senderPhotoUrl,
     required this.text,
     this.type = MessageType.text,
@@ -29,6 +36,11 @@ class ChatsEntity {
     this.mediaUrl,
     this.mediaSize,
     this.status = MessageStatus.sent,
+    this.isEdited = false,
+    this.replyToMessageId,
+    this.replyToSenderName,
+    this.replyToText,
+    this.replyToType,
   });
 }
 
@@ -45,6 +57,7 @@ class ChatMetadataEntity {
   final int unreadCount;
   final DateTime createdAt;
   final ChatType type;
+  final bool isEdited;
 
   ChatMetadataEntity({
     required this.id,
@@ -55,6 +68,7 @@ class ChatMetadataEntity {
     this.unreadCount = 0,
     required this.createdAt,
     this.type = ChatType.direct,
+    this.isEdited = false,
   });
 }
 

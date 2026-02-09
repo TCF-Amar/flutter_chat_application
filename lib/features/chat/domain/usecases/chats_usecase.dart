@@ -1,6 +1,7 @@
 import 'package:chat_kare/core/utils/typedefs.dart';
 import 'package:chat_kare/features/chat/domain/repositories/chats_repository.dart';
 import 'package:chat_kare/features/chat/domain/entities/chats_entity.dart';
+import 'package:chat_kare/features/chat/data/models/chat_meta_data.dart';
 
 class ChatsUsecase {
   final ChatsRepository chatsRepository;
@@ -43,5 +44,19 @@ class ChatsUsecase {
     );
   }
 
+  Stream<List<ChatMetaData>> getChatsStream(String userId) {
+    return chatsRepository.getChatsStream(userId);
+  }
 
+  Future<Result<bool>> editMessage({
+    required String chatId,
+    required String messageId,
+    required String text,
+  }) async {
+    return await chatsRepository.editMessage(
+      chatId: chatId,
+      messageId: messageId,
+      text: text,
+    );
+  }
 }

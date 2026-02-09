@@ -1,3 +1,4 @@
+import 'package:chat_kare/core/services/auth_state_notifier.dart';
 import 'package:chat_kare/features/chat/presentation/controllers/chat_controller.dart';
 import 'package:chat_kare/features/chat/presentation/widgets/chat_app_bar_widget.dart';
 import 'package:chat_kare/features/chat/presentation/widgets/chat_input_widget.dart';
@@ -26,7 +27,10 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
 
     // Create a unique controller for this chat page
     _controller = Get.put(
-      ChatController(contact: widget.contact),
+      ChatController(
+        contact: widget.contact,
+        authStateNotifier: Get.find<AuthStateNotifier>(),
+      ),
       tag: _controllerTag,
     );
 

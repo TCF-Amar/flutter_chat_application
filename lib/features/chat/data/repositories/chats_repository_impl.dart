@@ -1,6 +1,7 @@
 import 'package:chat_kare/core/errors/error_mapper.dart';
 import 'package:chat_kare/core/utils/typedefs.dart';
 import 'package:chat_kare/features/chat/data/datasources/chats_firebase_data_source.dart';
+import 'package:chat_kare/features/chat/data/models/chat_meta_data.dart';
 import 'package:chat_kare/features/chat/data/models/chats_model.dart';
 import 'package:chat_kare/features/chat/domain/entities/chats_entity.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -85,5 +86,28 @@ class ChatsRepositoryImpl implements ChatsRepository {
   @override
   Stream<int> getUnreadCountStream(String chatId, String userId) {
     return chatFirebaseDataSource.getUnreadCountStream(chatId, userId);
+  }
+
+  @override
+  Future<Result<bool>> editMessage({
+    required String chatId,
+    required String messageId,
+    required String text,
+  }) async {
+    try {
+      await chatFirebaseDataSource.editMessage(
+        chatId: chatId,
+        messageId: messageId,
+        text: text,
+      );
+      return Right(true);
+    } on FirebaseException catch (e) {
+      return Left(mapExceptionToFailure(e));
+    }
+  }
+
+  @override
+  Stream<List<ChatMetaData>> getChatsStream(String userId) {
+    return chatFirebaseDataSource.getChatsStream(userId);
   }
 }

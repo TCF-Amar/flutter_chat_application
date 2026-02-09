@@ -88,7 +88,7 @@ class ContactsRepositoryImpl extends ContactsRepository {
       // 6. Add target user to my contacts
       final newContact = ContactsModel(
         id: targetUser.uid,
-        name: targetUser.displayName ?? entity.name ?? targetUser.email,
+        name: targetUser.displayName ?? entity.name ,
         email: targetUser.email,
         phoneNumber: targetUser.phoneNumber,
         photoUrl: targetUser.photoUrl,

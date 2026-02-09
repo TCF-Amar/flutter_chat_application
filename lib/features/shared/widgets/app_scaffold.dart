@@ -1,3 +1,4 @@
+import 'package:chat_kare/core/theme/theme_extensions.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -67,12 +68,17 @@ class AppScaffold extends StatelessWidget {
       content = SafeArea(child: content);
     }
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value:
           statusBarStyle ??
           SystemUiOverlayStyle(
-            statusBarColor: Colors.transparent,
-            statusBarIconBrightness: Brightness.dark,
+            statusBarColor: context.colorScheme.background,
+            statusBarIconBrightness: isDark
+                ? Brightness.light
+                : Brightness.dark,
+            statusBarBrightness: isDark ? Brightness.dark : Brightness.light,
           ),
       child: Stack(
         children: [
@@ -80,17 +86,31 @@ class AppScaffold extends StatelessWidget {
             resizeToAvoidBottomInset: resizeToAvoidBottomInset,
             appBar:
                 appBar ??
-                AppBar(toolbarHeight: 0, backgroundColor: Colors.transparent),
+                AppBar(
+                  toolbarHeight: 0,
+                  backgroundColor: context.colorScheme.background,
+                  elevation: 0,
+                  systemOverlayStyle:
+                      statusBarStyle ??
+                      SystemUiOverlayStyle(
+                        statusBarColor: context.colorScheme.background,
+                        statusBarIconBrightness: isDark
+                            ? Brightness.light
+                            : Brightness.dark,
+                        statusBarBrightness: isDark
+                            ? Brightness.dark
+                            : Brightness.light,
+                      ),
+                ),
             drawer: drawer,
             bottomNavigationBar: bottomNavigationBar,
             floatingActionButton: floatingActionButton,
-
-            backgroundColor: backgroundGradient == null
-                ? backgroundColor
-                : Colors.transparent,
+            backgroundColor: backgroundColor ?? context.colorScheme.background,
             body: Container(
               decoration: BoxDecoration(
-                color: backgroundGradient == null ? backgroundColor : null,
+                color: backgroundGradient == null
+                    ? (backgroundColor ?? context.colorScheme.background)
+                    : null,
                 gradient: backgroundGradient,
               ),
               child: content,
@@ -101,7 +121,7 @@ class AppScaffold extends StatelessWidget {
           if (isLoading)
             Positioned.fill(
               child: Container(
-                color: Colors.black.withAlpha(128),
+                color: context.colorScheme.background.withOpacity(0.8),
                 alignment: Alignment.center,
                 child: loadingWidget ?? const CircularProgressIndicator(),
               ),

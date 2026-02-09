@@ -53,15 +53,13 @@ class ContactsController extends GetxController {
     fetchContacts();
   }
 
-  // debounce search contact via phone number or email or name
   final searchController = TextEditingController();
   final searchResults = <ContactsEntity>[].obs;
   final debounce = Duration(milliseconds: 500);
 
-  // find catad contacts list
   void findContacts() {
     searchResults.value = contacts.where((contact) {
-      return contact.name!.toLowerCase().contains(
+      return contact.name.toLowerCase().contains(
             searchController.text.toLowerCase(),
           ) ||
           contact.phoneNumber!.toLowerCase().contains(
@@ -114,7 +112,7 @@ class ContactsController extends GetxController {
       id: '',
       name: nameController.text.trim().isNotEmpty
           ? nameController.text.trim()
-          : null,
+          : 'Unknown',
       email: email,
       phoneNumber: phoneNumber,
     );

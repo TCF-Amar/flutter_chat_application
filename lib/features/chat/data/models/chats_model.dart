@@ -9,6 +9,7 @@ class ChatsModel extends ChatsEntity {
     required super.senderId,
     required super.receiverId,
     required super.senderName,
+    required super.receiverName,
     super.senderPhotoUrl,
     required super.text,
     super.type = MessageType.text,
@@ -18,6 +19,11 @@ class ChatsModel extends ChatsEntity {
     super.mediaUrl,
     super.mediaSize,
     super.status,
+    super.isEdited = false,
+    super.replyToMessageId,
+    super.replyToSenderName,
+    super.replyToText,
+    super.replyToType,
   });
 
   factory ChatsModel.fromJson(Map<String, dynamic> json) {
@@ -26,7 +32,8 @@ class ChatsModel extends ChatsEntity {
       chatId: json["chatId"],
       senderId: json["senderId"],
       receiverId: json["receiverId"],
-      senderName: json["senderName"],
+      senderName: json["senderName"] ?? 'Unknown',
+      receiverName: json["receiverName"] ?? 'Unknown',
       senderPhotoUrl: json["senderPhotoUrl"],
       text: json["text"],
       type: MessageType.values.firstWhere((e) => e.name == json["type"]),
@@ -36,6 +43,13 @@ class ChatsModel extends ChatsEntity {
       mediaUrl: json["mediaUrl"],
       mediaSize: json["mediaSize"],
       status: MessageStatus.sent,
+      isEdited: json["isEdited"] ?? false,
+      replyToMessageId: json["replyToMessageId"],
+      replyToSenderName: json["replyToSenderName"],
+      replyToText: json["replyToText"],
+      replyToType: json["replyToType"] != null
+          ? MessageType.values.firstWhere((e) => e.name == json["replyToType"])
+          : null,
     );
   }
 
@@ -46,6 +60,7 @@ class ChatsModel extends ChatsEntity {
       "senderId": senderId,
       "receiverId": receiverId,
       "senderName": senderName,
+      "receiverName": receiverName,
       "senderPhotoUrl": senderPhotoUrl,
       "text": text,
       "type": type.name,
@@ -54,6 +69,11 @@ class ChatsModel extends ChatsEntity {
       "readBy": readBy,
       "mediaUrl": mediaUrl,
       "mediaSize": mediaSize,
+      "isEdited": isEdited,
+      "replyToMessageId": replyToMessageId,
+      "replyToSenderName": replyToSenderName,
+      "replyToText": replyToText,
+      "replyToType": replyToType?.name,
     };
   }
 
@@ -64,6 +84,7 @@ class ChatsModel extends ChatsEntity {
       senderId: senderId,
       receiverId: receiverId,
       senderName: senderName,
+      receiverName: receiverName,
       senderPhotoUrl: senderPhotoUrl,
       text: text,
       type: type,
@@ -73,6 +94,11 @@ class ChatsModel extends ChatsEntity {
       mediaUrl: mediaUrl,
       mediaSize: mediaSize,
       status: status,
+      isEdited: isEdited,
+      replyToMessageId: replyToMessageId,
+      replyToSenderName: replyToSenderName,
+      replyToText: replyToText,
+      replyToType: replyToType,
     );
   }
 
@@ -84,6 +110,7 @@ class ChatsModel extends ChatsEntity {
       senderId: entity.senderId,
       receiverId: entity.receiverId,
       senderName: entity.senderName,
+      receiverName: entity.receiverName,
       senderPhotoUrl: entity.senderPhotoUrl,
       text: entity.text,
       type: entity.type,
@@ -93,6 +120,11 @@ class ChatsModel extends ChatsEntity {
       mediaUrl: entity.mediaUrl,
       mediaSize: entity.mediaSize,
       status: entity.status,
+      isEdited: entity.isEdited,
+      replyToMessageId: entity.replyToMessageId,
+      replyToSenderName: entity.replyToSenderName,
+      replyToText: entity.replyToText,
+      replyToType: entity.replyToType,
     );
   }
 }

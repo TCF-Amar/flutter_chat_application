@@ -2,7 +2,7 @@ import 'package:equatable/equatable.dart';
 
 class ContactsEntity extends Equatable {
   final String id;
-  final String? name;
+  final String name;
   final String? email;
   final String? phoneNumber;
   final String? photoUrl;
@@ -12,7 +12,7 @@ class ContactsEntity extends Equatable {
 
   const ContactsEntity({
     required this.id,
-    this.name,
+    required this.name,
     this.email,
     this.phoneNumber,
     this.photoUrl,

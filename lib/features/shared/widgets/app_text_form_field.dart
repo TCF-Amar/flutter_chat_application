@@ -24,6 +24,7 @@ class AppTextFormField extends StatefulWidget {
   final double? borderRadius;
   final double? borderWidth;
   final Color? borderColor;
+  final TextInputAction? textInputAction;
   final ValueChanged<String>? onFieldSubmitted;
   final FocusNode? focusNode;
 
@@ -52,6 +53,7 @@ class AppTextFormField extends StatefulWidget {
     this.inputFormatters,
     this.maxLength,
     this.focusNode,
+    this.textInputAction,
   });
 
   @override
@@ -74,6 +76,7 @@ class _AppTextFormFieldState extends State<AppTextFormField> {
       focusNode: widget.focusNode,
       obscureText: widget.isPassword ? _obscureText : false,
       keyboardType: widget.keyboardType,
+      textInputAction: widget.textInputAction,
       validator: widget.validator,
       maxLines: widget.isPassword ? 1 : widget.maxLines,
       minLines: widget.minLines,

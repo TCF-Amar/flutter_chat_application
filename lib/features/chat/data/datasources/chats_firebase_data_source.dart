@@ -38,27 +38,10 @@ class ChatsRemoteDataSourceImpl {
         .collection('chats')
         .doc(message.chatId);
 
-    // We need receiver's info for sender's metadata
-    // Ideally this should be passed or fetched. For now, we might lack receiver name/photo if not passed.
-    // However, in ChatPage we have 'contact' entity.
-    // In ChatMetaData we store receiver info.
-    // For the SENDER, the 'receiver' is the other person.
-    // For the RECEIVER, the 'receiver' (other person) is the SENDER.
-
-    // fetching receiver data for sender's chat list
-    final receiverDoc = await fs.firestore
-        .collection('users')
-        .doc(message.receiverId)
-        .get();
-    final receiverData = receiverDoc.data();
-    final receiverName = receiverData?['displayName'] ?? 'Unknown';
-    final receiverPhoto = receiverData?['photoUrl'];
-
     await senderChatRef.set({
       'chatId': message.chatId,
       'receiverId': message.receiverId,
-      'receiverName': receiverName,
-      'receiverPhotoUrl': receiverPhoto,
+      'receiverName': message.receiverName,
       'lastMessage': message.text,
       'lastMessageTime': message.timestamp,
       'unreadCount': 0, // Sender has read their own message
@@ -192,5 +175,18 @@ class ChatsRemoteDataSourceImpl {
               .map((doc) => ChatMetaData.fromMap(doc.data()))
               .toList();
         });
+  }
+
+  Future<void> editMessage({
+    required String chatId,
+    required String messageId,
+    required String text,
+  }) async {
+    await fs.firestore
+        .collection('chats')
+        .doc(chatId)
+        .collection('messages')
+        .doc(messageId)
+        .update({'text': text, 'isEdited': true});
   }
 }

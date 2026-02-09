@@ -11,6 +11,8 @@ import 'package:chat_kare/features/shared/pages/splash_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:chat_kare/core/routes/app_routes.dart';
+import 'package:chat_kare/features/chat/presentation/controllers/chat_controller.dart';
+import 'package:get/get.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
@@ -30,11 +32,6 @@ class AppRouter {
         final isProfileCompleted = authStateNotifier.isProfileCompleted;
         final currentPath = state.matchedLocation;
 
-        // Allow splash screen to show
-        if (currentPath == AppRoutes.splash.path) {
-          return null;
-        }
-
         // If not authenticated and trying to access protected routes
         if (!isAuthenticated) {
           if (currentPath == AppRoutes.signin.path ||
@@ -50,7 +47,7 @@ class AppRouter {
           if (!isProfileCompleted) {
             // Allow user to stay on profile complete page
             if (currentPath == AppRoutes.profileComplete.path) {
-              return null;
+              return AppRoutes.profileComplete.path;
             }
             // Redirect to profile complete page
             return AppRoutes.profileComplete.path;
@@ -105,6 +102,12 @@ class AppRouter {
           path: AppRoutes.chat.path,
           builder: (context, state) {
             final contact = state.extra as ContactsEntity;
+            Get.lazyPut(
+              () => ChatController(
+                contact: contact,
+                authStateNotifier: Get.find(),
+              ),
+            );
             return ChatPage(contact: contact);
           },
         ),

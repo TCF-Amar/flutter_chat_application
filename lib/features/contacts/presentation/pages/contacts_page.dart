@@ -150,12 +150,7 @@ class ContactsPage extends StatelessWidget {
                                 ),
                                 title: Row(
                                   children: [
-                                    AppText(
-                                      contact.name ??
-                                          contact.email ??
-                                          contact.phoneNumber ??
-                                          "Unknown",
-                                    ),
+                                    AppText(contact.name),
                                     if (fs.currentUser?.uid == contact.id)
                                       const AppText(
                                         " (You)",
@@ -164,9 +159,8 @@ class ContactsPage extends StatelessWidget {
                                   ],
                                 ),
                                 subtitle:
-                                    (contact.name != null &&
-                                        (contact.email != null ||
-                                            contact.phoneNumber != null))
+                                    (contact.email != null ||
+                                            contact.phoneNumber != null)
                                     ? AppText(
                                         contact.phoneNumber ??
                                             contact.email ??

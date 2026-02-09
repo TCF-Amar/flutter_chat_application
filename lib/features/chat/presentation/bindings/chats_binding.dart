@@ -27,6 +27,7 @@ class ChatsBinding {
       () => ChatListController(
         chatsUsecase: Get.find(),
         authUseCase: Get.find<AuthUsecase>(),
+        authStateNotifier: Get.find(),
       ),
     );
   }

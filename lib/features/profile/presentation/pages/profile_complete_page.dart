@@ -29,6 +29,11 @@ class ProfileCompletePage extends GetView<ProfileController> {
                 fontSize: 16,
                 textAlign: TextAlign.center,
               ),
+              AppText(
+                authController.currentUser?.email ?? "",
+                fontSize: 16,
+                textAlign: TextAlign.center,
+              ),
               const SizedBox(height: 24),
               AppTextFormField(
                 controller: controller.nameController,

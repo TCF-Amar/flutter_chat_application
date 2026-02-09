@@ -34,11 +34,7 @@ class ChatTiles extends StatelessWidget {
               : Icon(Icons.person, color: context.colorScheme.surface),
         ),
       ),
-      title: AppText(
-        contact.name ?? contact.phoneNumber!,
-        fontSize: 16,
-        fontWeight: FontWeight.w600,
-      ),
+      title: AppText(contact.name, fontSize: 16, fontWeight: FontWeight.w600),
       subtitle: AppText(
         contact.phoneNumber ?? "",
         fontSize: 12,

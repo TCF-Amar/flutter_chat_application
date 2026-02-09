@@ -64,14 +64,18 @@ class ChatMessagesWidget extends StatelessWidget {
         onRefresh: () async {
           await controller.refreshMessages();
         },
-        child: ListChats(
-          controller: controller,
-          onMessageVisible: (message) {
-            // Mark message as read when it becomes visible
-            if (!message.isRead && message.senderId == contact.id) {
-              controller.markMessageAsRead(message.id);
-            }
-          },
+
+        child: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: ListChats(
+            controller: controller,
+            onMessageVisible: (message) {
+              // Mark message as read when it becomes visible
+              if (!message.isRead && message.senderId == contact.id) {
+                controller.markMessageAsRead(message.id);
+              }
+            },
+          ),
         ),
       );
     });

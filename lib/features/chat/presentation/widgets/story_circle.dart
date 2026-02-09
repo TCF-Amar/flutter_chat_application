@@ -17,6 +17,7 @@ class StoryCircle extends StatelessWidget {
         children: [
           _StoryAvatar(context),
           const SizedBox(height: 6),
+
           AppText(
             name,
             maxLines: 1,
