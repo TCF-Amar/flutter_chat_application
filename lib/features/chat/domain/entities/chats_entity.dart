@@ -12,6 +12,7 @@ class ChatsEntity {
   final List<String> readBy;
   final String? mediaUrl;
   final int? mediaSize;
+  final MessageStatus status;
 
   ChatsEntity({
     required this.id,
@@ -27,10 +28,13 @@ class ChatsEntity {
     this.readBy = const [],
     this.mediaUrl,
     this.mediaSize,
+    this.status = MessageStatus.sent,
   });
 }
 
 enum MessageType { text, image, video, audio, document }
+
+enum MessageStatus { sending, sent, delivered, read }
 
 class ChatMetadataEntity {
   final String id;

@@ -17,6 +17,7 @@ class ChatsModel extends ChatsEntity {
     super.readBy = const [],
     super.mediaUrl,
     super.mediaSize,
+    super.status,
   });
 
   factory ChatsModel.fromJson(Map<String, dynamic> json) {
@@ -34,6 +35,7 @@ class ChatsModel extends ChatsEntity {
       readBy: List<String>.from(json["readBy"]),
       mediaUrl: json["mediaUrl"],
       mediaSize: json["mediaSize"],
+      status: MessageStatus.sent,
     );
   }
 
@@ -70,6 +72,7 @@ class ChatsModel extends ChatsEntity {
       readBy: readBy,
       mediaUrl: mediaUrl,
       mediaSize: mediaSize,
+      status: status,
     );
   }
 
@@ -89,6 +92,7 @@ class ChatsModel extends ChatsEntity {
       readBy: entity.readBy,
       mediaUrl: entity.mediaUrl,
       mediaSize: entity.mediaSize,
+      status: entity.status,
     );
   }
 }

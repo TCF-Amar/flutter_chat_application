@@ -1,5 +1,6 @@
 import 'package:chat_kare/core/services/firebase_services.dart';
 import 'package:chat_kare/features/chat/data/models/chats_model.dart';
+import 'package:chat_kare/features/chat/data/models/chat_meta_data.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class ChatsRemoteDataSourceImpl {
@@ -29,6 +30,56 @@ class ChatsRemoteDataSourceImpl {
     //   title: message.senderName,
     //   body: message.text,
     // );
+
+    // Update Chat Metadata for Sender
+    final senderChatRef = fs.firestore
+        .collection('users')
+        .doc(message.senderId)
+        .collection('chats')
+        .doc(message.chatId);
+
+    // We need receiver's info for sender's metadata
+    // Ideally this should be passed or fetched. For now, we might lack receiver name/photo if not passed.
+    // However, in ChatPage we have 'contact' entity.
+    // In ChatMetaData we store receiver info.
+    // For the SENDER, the 'receiver' is the other person.
+    // For the RECEIVER, the 'receiver' (other person) is the SENDER.
+
+    // fetching receiver data for sender's chat list
+    final receiverDoc = await fs.firestore
+        .collection('users')
+        .doc(message.receiverId)
+        .get();
+    final receiverData = receiverDoc.data();
+    final receiverName = receiverData?['displayName'] ?? 'Unknown';
+    final receiverPhoto = receiverData?['photoUrl'];
+
+    await senderChatRef.set({
+      'chatId': message.chatId,
+      'receiverId': message.receiverId,
+      'receiverName': receiverName,
+      'receiverPhotoUrl': receiverPhoto,
+      'lastMessage': message.text,
+      'lastMessageTime': message.timestamp,
+      'unreadCount': 0, // Sender has read their own message
+    }, SetOptions(merge: true));
+
+    // Update Chat Metadata for Receiver
+    final receiverChatRef = fs.firestore
+        .collection('users')
+        .doc(message.receiverId)
+        .collection('chats')
+        .doc(message.chatId);
+
+    await receiverChatRef.set({
+      'chatId': message.chatId,
+      'receiverId': message.senderId,
+      'receiverName': message.senderName,
+      'receiverPhotoUrl': message.senderPhotoUrl,
+      'lastMessage': message.text,
+      'lastMessageTime': message.timestamp,
+      'unreadCount': FieldValue.increment(1),
+    }, SetOptions(merge: true));
   }
 
   // get messages
@@ -47,7 +98,7 @@ class ChatsRemoteDataSourceImpl {
   }
 
   // mark as read
-  Future<void> markAsRead({
+  Future<void> markMessageAsRead({
     required String chatId,
     required String messageId,
     required String userId,
@@ -59,8 +110,16 @@ class ChatsRemoteDataSourceImpl {
         .doc(messageId)
         .update({
           'readBy': FieldValue.arrayUnion([userId]),
-          'isRead': true, // Optionally mark as read if logic dictates
+          'isRead': true,
+          'readAt': FieldValue.serverTimestamp(),
         });
+
+    await fs.firestore
+        .collection('users')
+        .doc(userId)
+        .collection('chats')
+        .doc(chatId)
+        .update({'unreadCount': FieldValue.increment(-1)});
   }
 
   Future<void> sendTypingStatus({
@@ -78,5 +137,60 @@ class ChatsRemoteDataSourceImpl {
   // get chat stream
   Stream<DocumentSnapshot<Map<String, dynamic>>> getChatStream(String chatId) {
     return fs.firestore.collection('chats').doc(chatId).snapshots();
+  }
+
+  Stream<int> getUnreadCountStream(String chatId, String userId) {
+    return fs.firestore
+        .collection('chats')
+        .doc(chatId)
+        .collection('messages')
+        .where('receiverId', isEqualTo: userId)
+        .where('isRead', isEqualTo: false)
+        .snapshots()
+        .map((snapshot) => snapshot.docs.length);
+  }
+
+  Future<void> markAllMessagesAsRead({
+    required String chatId,
+    required String userId,
+  }) async {
+    final query = await fs.firestore
+        .collection('chats')
+        .doc(chatId)
+        .collection('messages')
+        .where('receiverId', isEqualTo: userId)
+        .where('isRead', isEqualTo: false)
+        .get();
+
+    final batch = fs.firestore.batch();
+    for (var doc in query.docs) {
+      batch.update(doc.reference, {
+        'isRead': true,
+        'readBy': FieldValue.arrayUnion([userId]),
+      });
+    }
+    await batch.commit();
+
+    await fs.firestore
+        .collection('users')
+        .doc(userId)
+        .collection('chats')
+        .doc(chatId)
+        .update({'unreadCount': 0});
+  }
+
+  // get chats stream
+  Stream<List<ChatMetaData>> getChatsStream(String userId) {
+    return fs.firestore
+        .collection('users')
+        .doc(userId)
+        .collection('chats')
+        .orderBy('lastMessageTime', descending: true)
+        .snapshots()
+        .map((snapshot) {
+          return snapshot.docs
+              .map((doc) => ChatMetaData.fromMap(doc.data()))
+              .toList();
+        });
   }
 }

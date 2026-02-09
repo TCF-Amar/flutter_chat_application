@@ -1,8 +1,8 @@
 import 'package:chat_kare/features/auth/presentation/controllers/auth_controller.dart';
 import 'package:chat_kare/core/theme/theme_extensions.dart';
-import 'package:chat_kare/features/chat/presentation/widgets/chat_tiles.dart';
 import 'package:chat_kare/features/chat/presentation/widgets/story_circle.dart';
-import 'package:chat_kare/features/contacts/presentation/controllers/contacts_controller.dart';
+import 'package:chat_kare/features/chat/presentation/controllers/chat_list_controller.dart';
+import 'package:chat_kare/features/chat/presentation/widgets/recent_chat_tile.dart';
 import 'package:chat_kare/features/home/presentation/controllers/home_controller.dart';
 import 'package:chat_kare/features/shared/widgets/default_app_bar.dart';
 import 'package:chat_kare/features/shared/widgets/index.dart';
@@ -15,7 +15,7 @@ class ChatsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final controller = Get.find<HomeController>();
-    final contactsController = Get.find<ContactsController>();
+    final chatListController = Get.find<ChatListController>();
     return AppScaffold(
       appBar: DefaultAppBar(
         title: "Messages",
@@ -117,15 +117,23 @@ class ChatsPage extends StatelessWidget {
                       fontSize: 16,
                     ),
                   ),
-                  ListView.builder(
-                    shrinkWrap: true,
-                    itemCount: contactsController.contacts.length,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemBuilder: (context, index) {
-                      final contact = contactsController.contacts[index];
-                      return ChatTiles(contact: contact);
-                    },
-                  ),
+                  Obx(() {
+                    if (chatListController.isLoading.value) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+                    if (chatListController.chats.isEmpty) {
+                      return const Center(child: AppText("No recent chats"));
+                    }
+                    return ListView.builder(
+                      shrinkWrap: true,
+                      itemCount: chatListController.chats.length,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemBuilder: (context, index) {
+                        final chat = chatListController.chats[index];
+                        return RecentChatTile(chat: chat);
+                      },
+                    );
+                  }),
                 ],
               ),
             ),

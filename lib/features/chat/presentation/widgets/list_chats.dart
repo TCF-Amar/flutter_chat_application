@@ -5,35 +5,44 @@ import 'package:chat_kare/features/shared/widgets/app_text.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
+import 'package:visibility_detector/visibility_detector.dart';
 
 class ListChats extends StatelessWidget {
-  const ListChats({super.key});
+  final ChatController controller;
+  final Function(ChatsEntity)? onMessageVisible;
+
+  const ListChats({super.key, required this.controller, this.onMessageVisible});
 
   @override
   Widget build(BuildContext context) {
-    final ChatController controller = Get.find<ChatController>();
-    return StreamBuilder<List<ChatsEntity>>(
-      stream: controller.messages.stream,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        }
-        if (snapshot.hasError) {
-          return Center(child: Text("Error: ${snapshot.error}"));
-        }
-        if (!snapshot.hasData || snapshot.data!.isEmpty) {
-          return const Center(child: Text("No messages yet"));
-        }
+    // final ChatController controller = Get.find<ChatController>(); // Removed explicitly finding
+    return Obx(() {
+      final messages = controller.messages;
+      if (controller.isLoading.value) {
+        return const Center(child: CircularProgressIndicator());
+      }
+      if (messages.isEmpty) {
+        return const Center(child: Text("No messages yet"));
+      }
 
-        final messages = snapshot.data!;
-        return ListView.builder(
-          reverse: true,
-          itemCount: messages.length,
-          itemBuilder: (context, index) {
-            final message = messages[index];
-            final isMe = message.senderId == controller.currentUser?.uid;
+      return ListView.builder(
+        controller: controller.scrollController,
+        itemCount: messages.length,
+        itemBuilder: (context, index) {
+          final message = messages[index];
+          onMessageVisible?.call(message);
 
-            return Align(
+          final isMe = message.senderId == controller.fs.currentUser?.uid;
+          // ... rest of builder
+
+          return VisibilityDetector(
+            key: Key(message.id),
+            onVisibilityChanged: (info) {
+              if (info.visibleFraction > 0.5 && !isMe && !message.isRead) {
+                controller.markMessageAsRead(message.id);
+              }
+            },
+            child: Align(
               alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
               child: Container(
                 constraints: BoxConstraints(maxWidth: context.width * 0.7),
@@ -73,25 +82,30 @@ class ListChats extends StatelessWidget {
                         ),
                         if (isMe) ...[
                           SizedBox(width: 4),
-                          Icon(
-                            message.isRead ? Icons.done_all : Icons.done,
-                            size: 16,
-                            color: message.isRead
-                                ? context.textColors.link
-                                : context.colorScheme.primary.withValues(
-                                    alpha: 0.7,
-                                  ),
-                          ),
+                          if (message.status == MessageStatus.sending)
+                            const SizedBox(
+                              height: 12,
+                              width: 12,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            ),
+                          if (message.status != MessageStatus.sending)
+                            Icon(
+                              message.isRead ? Icons.done_all : Icons.done,
+                              size: 16,
+                              color: message.isRead
+                                  ? context.textColors.link
+                                  : context.textColors.white,
+                            ),
                         ],
                       ],
                     ),
                   ],
                 ),
               ),
-            );
-          },
-        );
-      },
-    );
+            ),
+          );
+        },
+      );
+    });
   }
 }

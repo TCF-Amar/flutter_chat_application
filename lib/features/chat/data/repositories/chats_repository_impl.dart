@@ -7,11 +7,14 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dartz/dartz.dart';
 import 'package:firebase_core/firebase_core.dart';
 
-class ChatsRepositoryImpl {
+import 'package:chat_kare/features/chat/domain/repositories/chats_repository.dart';
+
+class ChatsRepositoryImpl implements ChatsRepository {
   ChatsRemoteDataSourceImpl chatFirebaseDataSource;
 
   ChatsRepositoryImpl({required this.chatFirebaseDataSource});
 
+  @override
   Future<Result<void>> sendMessage(ChatsEntity message) async {
     try {
       await chatFirebaseDataSource.sendMessage(ChatsModel.fromEntity(message));
@@ -23,12 +26,14 @@ class ChatsRepositoryImpl {
     }
   }
 
-  Stream<List<ChatsEntity>> getMessages(String chatId) {
+  @override
+  Stream<List<ChatsEntity>> getMessagesStream(String chatId) {
     return chatFirebaseDataSource.getMessages(chatId).map((models) {
       return models.map((model) => model.toEntity()).toList();
     });
   }
 
+  @override
   Stream<List<String>> getTypingUsersStream(String chatId) {
     return chatFirebaseDataSource.getChatStream(chatId).map((snapshot) {
       if (!snapshot.exists || snapshot.data() == null) return [];
@@ -40,6 +45,7 @@ class ChatsRepositoryImpl {
     });
   }
 
+  @override
   Future<void> sendTypingStatus({
     required String chatId,
     required String userId,
@@ -50,5 +56,34 @@ class ChatsRepositoryImpl {
       userId: userId,
       isTyping: isTyping,
     );
+  }
+
+  @override
+  Future<void> markMessageAsRead({
+    required String chatId,
+    required String messageId,
+    required String userId,
+  }) async {
+    await chatFirebaseDataSource.markMessageAsRead(
+      chatId: chatId,
+      messageId: messageId,
+      userId: userId,
+    );
+  }
+
+  @override
+  Future<void> markAllMessagesAsRead({
+    required String chatId,
+    required String userId,
+  }) async {
+    await chatFirebaseDataSource.markAllMessagesAsRead(
+      chatId: chatId,
+      userId: userId,
+    );
+  }
+
+  @override
+  Stream<int> getUnreadCountStream(String chatId, String userId) {
+    return chatFirebaseDataSource.getUnreadCountStream(chatId, userId);
   }
 }

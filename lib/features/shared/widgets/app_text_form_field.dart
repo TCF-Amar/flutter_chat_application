@@ -10,7 +10,8 @@ class AppTextFormField extends StatefulWidget {
   final FormFieldValidator<String>? validator;
   final Widget? prefixIcon;
   final Widget? suffixIcon;
-  final int maxLines;
+  final int? maxLines;
+  final int? minLines;
   final VoidCallback? onTap;
   final ValueChanged<String>? onChanged;
   final bool readOnly;
@@ -37,6 +38,7 @@ class AppTextFormField extends StatefulWidget {
     this.prefixIcon,
     this.suffixIcon,
     this.maxLines = 1,
+    this.minLines,
     this.onTap,
     this.onChanged,
     this.readOnly = false,
@@ -74,6 +76,7 @@ class _AppTextFormFieldState extends State<AppTextFormField> {
       keyboardType: widget.keyboardType,
       validator: widget.validator,
       maxLines: widget.isPassword ? 1 : widget.maxLines,
+      minLines: widget.minLines,
       readOnly: widget.readOnly,
       enabled: widget.enabled,
       onTap: widget.onTap,

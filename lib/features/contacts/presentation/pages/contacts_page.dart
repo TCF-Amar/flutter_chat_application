@@ -127,10 +127,13 @@ class ContactsPage extends StatelessWidget {
                                 //   );
                                 // },
                                 onTap: () {
-                                  // context.push(AppRoutes.c, extra: contact);
-                                  AppSnackbar.success(
-                                    message: 'Contact tapped',
+                                  context.push(
+                                    AppRoutes.chat.path,
+                                    extra: contact,
                                   );
+                                  // AppSnackbar.success(
+                                  //   message: 'Contact tapped',
+                                  // );
                                 },
                                 leading: CircleAvatar(
                                   radius: 24,

@@ -1,9 +1,9 @@
 import 'package:chat_kare/core/utils/typedefs.dart';
-import 'package:chat_kare/features/chat/data/repositories/chats_repository_impl.dart';
+import 'package:chat_kare/features/chat/domain/repositories/chats_repository.dart';
 import 'package:chat_kare/features/chat/domain/entities/chats_entity.dart';
 
 class ChatsUsecase {
-  final ChatsRepositoryImpl chatsRepository;
+  final ChatsRepository chatsRepository;
 
   ChatsUsecase({required this.chatsRepository});
 
@@ -12,7 +12,7 @@ class ChatsUsecase {
   }
 
   Stream<List<ChatsEntity>> getMessages(String chatId) {
-    return chatsRepository.getMessages(chatId);
+    return chatsRepository.getMessagesStream(chatId);
   }
 
   Stream<List<String>> getTypingUsersStream(String chatId) {
@@ -30,4 +30,18 @@ class ChatsUsecase {
       isTyping: isTyping,
     );
   }
+
+  Future<void> markMessageAsRead({
+    required String chatId,
+    required String messageId,
+    required String userId,
+  }) async {
+    await chatsRepository.markMessageAsRead(
+      chatId: chatId,
+      messageId: messageId,
+      userId: userId,
+    );
+  }
+
+
 }

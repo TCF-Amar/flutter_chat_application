@@ -1,5 +1,7 @@
 import 'package:chat_kare/features/auth/domain/entities/user_entity.dart';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 class UserModel extends UserEntity {
   const UserModel({
     required super.uid,
@@ -8,6 +10,8 @@ class UserModel extends UserEntity {
     super.photoUrl,
     required super.isProfileCompleted,
     required super.phoneNumber,
+    super.status,
+    super.lastSeen,
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
@@ -16,8 +20,12 @@ class UserModel extends UserEntity {
       email: json['email'],
       displayName: json['displayName'],
       photoUrl: json['photoUrl'],
-      isProfileCompleted: json['isProfileCompleted'],
+      isProfileCompleted: json['isProfileCompleted'] ?? false,
       phoneNumber: json['phoneNumber'],
+      status: json['status'],
+      lastSeen: json['lastSeen'] != null
+          ? (json['lastSeen'] as Timestamp).toDate()
+          : null,
     );
   }
 
@@ -29,6 +37,8 @@ class UserModel extends UserEntity {
       'photoUrl': photoUrl,
       "isProfileCompleted": isProfileCompleted,
       "phoneNumber": phoneNumber,
+      "status": status,
+      "lastSeen": lastSeen != null ? Timestamp.fromDate(lastSeen!) : null,
     };
   }
 
@@ -40,6 +50,8 @@ class UserModel extends UserEntity {
     String? fmcToken,
     bool? isProfileCompleted,
     String? phoneNumber,
+    String? status,
+    DateTime? lastSeen,
   }) {
     return UserModel(
       uid: uid ?? this.uid,
@@ -48,6 +60,8 @@ class UserModel extends UserEntity {
       photoUrl: photoUrl ?? this.photoUrl,
       isProfileCompleted: isProfileCompleted ?? this.isProfileCompleted,
       phoneNumber: phoneNumber ?? this.phoneNumber,
+      status: status ?? this.status,
+      lastSeen: lastSeen ?? this.lastSeen,
     );
   }
 
@@ -60,6 +74,8 @@ class UserModel extends UserEntity {
       photoUrl: photoUrl,
       isProfileCompleted: isProfileCompleted,
       phoneNumber: phoneNumber,
+      status: status,
+      lastSeen: lastSeen,
     );
   }
 }

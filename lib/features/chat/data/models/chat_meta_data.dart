@@ -1,24 +1,45 @@
-// // chats/{chatId}
-// class ChatMetadata {
-//   final String id;
-//   final List<String> participants;
-//   final String? lastMessage;
-//   final DateTime? lastMessageTime;
-//   final String? lastMessageSenderId;
-//   final int unreadCount;
-//   final DateTime createdAt;
-//   final ChatType type; // direct, group
+import 'package:cloud_firestore/cloud_firestore.dart';
 
-//   ChatMetadata({
-//     required this.id,
-//     required this.participants,
-//     this.lastMessage,
-//     this.lastMessageTime,
-//     this.lastMessageSenderId,
-//     this.unreadCount = 0,
-//     required this.createdAt,
-//     this.type = ChatType.direct,
-//   });
-// }
+class ChatMetaData {
+  final String chatId;
+  final String receiverId;
+  final String receiverName;
+  final String? receiverPhotoUrl;
+  final String lastMessage;
+  final DateTime lastMessageTime;
+  final int unreadCount;
 
-// enum ChatType { direct, group }
+  ChatMetaData({
+    required this.chatId,
+    required this.receiverId,
+    required this.receiverName,
+    this.receiverPhotoUrl,
+    required this.lastMessage,
+    required this.lastMessageTime,
+    required this.unreadCount,
+  });
+
+  Map<String, dynamic> toMap() {
+    return {
+      'chatId': chatId,
+      'receiverId': receiverId,
+      'receiverName': receiverName,
+      'receiverPhotoUrl': receiverPhotoUrl,
+      'lastMessage': lastMessage,
+      'lastMessageTime': lastMessageTime,
+      'unreadCount': unreadCount,
+    };
+  }
+
+  factory ChatMetaData.fromMap(Map<String, dynamic> map) {
+    return ChatMetaData(
+      chatId: map['chatId'] ?? '',
+      receiverId: map['receiverId'] ?? '',
+      receiverName: map['receiverName'] ?? 'Unknown',
+      receiverPhotoUrl: map['receiverPhotoUrl'],
+      lastMessage: map['lastMessage'] ?? '',
+      lastMessageTime: (map['lastMessageTime'] as Timestamp).toDate(),
+      unreadCount: map['unreadCount']?.toInt() ?? 0,
+    );
+  }
+}
