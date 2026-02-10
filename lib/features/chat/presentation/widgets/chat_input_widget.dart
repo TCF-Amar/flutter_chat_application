@@ -1,5 +1,9 @@
+import 'dart:io';
+
 import 'package:chat_kare/core/theme/theme_extensions.dart';
+import 'package:chat_kare/core/utils/media_picker.dart';
 import 'package:chat_kare/features/chat/presentation/controllers/chat_controller.dart';
+import 'package:chat_kare/features/chat/presentation/widgets/media_preview.dart';
 import 'package:chat_kare/features/shared/widgets/app_text.dart';
 import 'package:chat_kare/features/shared/widgets/app_text_form_field.dart';
 import 'package:flutter/material.dart';
@@ -42,48 +46,55 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
   }
 
   Widget _buildEditingPreview() {
-    return Container(
-      padding: const EdgeInsets.only(left: 4, right: 8),
-      height: 50,
-      decoration: BoxDecoration(
-        color: context.colorScheme.surface,
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(12),
-          topRight: Radius.circular(12),
-        ),
-      ),
-      child: Align(
-        alignment: Alignment.centerRight,
-        child: Row(
-          children: [
-            IconButton(
-              icon: const Icon(Icons.close, size: 20, color: Colors.grey),
-              onPressed: widget.controller.cancelEditing,
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(),
+    return Column(
+      children: [
+        Container(
+          padding: const EdgeInsets.only(left: 4, right: 8),
+          height: 50,
+          decoration: BoxDecoration(
+            color: context.colorScheme.surface,
+            borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(12),
+              topRight: Radius.circular(12),
             ),
-            Spacer(),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
-              decoration: BoxDecoration(
-                color: context.colorScheme.primary,
-                borderRadius: BorderRadius.only(
-                  bottomLeft: Radius.circular(10),
-                  bottomRight: Radius.circular(10),
-                  topLeft: Radius.circular(10),
+          ),
+          child: Align(
+            alignment: Alignment.centerRight,
+            child: Row(
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.close, size: 20, color: Colors.grey),
+                  onPressed: widget.controller.cancelEditing,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
                 ),
-              ),
-              child: AppText(
-                widget.controller.messageController.text,
-                maxLines: 1,
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                overflow: TextOverflow.ellipsis,
-              ),
+                Spacer(),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 18,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    color: context.colorScheme.primary,
+                    borderRadius: BorderRadius.only(
+                      bottomLeft: Radius.circular(10),
+                      bottomRight: Radius.circular(10),
+                      topLeft: Radius.circular(10),
+                    ),
+                  ),
+                  child: AppText(
+                    widget.controller.messageController.text,
+                    maxLines: 1,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
-      ),
+      ],
     );
   }
 
@@ -153,34 +164,54 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
           icon: const Icon(Icons.attach_file),
           onSelected: (value) => _handleAttachment(value),
           itemBuilder: (context) => [
-            const PopupMenuItem(
+            PopupMenuItem(
               value: 'camera',
-              child: Row(
-                children: [
-                  Icon(Icons.camera_alt, size: 20),
-                  SizedBox(width: 8),
-                  Text('Camera'),
-                ],
+              child: GestureDetector(
+                onTap: () async {
+                  final file = await MediaPicker.instance.pickImageFromCamera();
+                  if (file != null) {
+                    print(file.path);
+                  }
+                },
+                child: const Row(
+                  children: [
+                    Icon(Icons.camera_alt, size: 20),
+                    SizedBox(width: 8),
+                    Text('Camera'),
+                  ],
+                ),
               ),
             ),
-            const PopupMenuItem(
+            PopupMenuItem(
               value: 'gallery',
-              child: Row(
-                children: [
-                  Icon(Icons.photo_library, size: 20),
-                  SizedBox(width: 8),
-                  Text('Gallery'),
-                ],
+              child: GestureDetector(
+                onTap: () async {
+                  final file = await MediaPicker.instance
+                      .pickImageFromGallery();
+                  if (file != null) {}
+                },
+                child: const Row(
+                  children: [
+                    Icon(Icons.photo_library, size: 20),
+                    SizedBox(width: 8),
+                    Text('Gallery'),
+                  ],
+                ),
               ),
             ),
-            const PopupMenuItem(
+            PopupMenuItem(
               value: 'document',
-              child: Row(
-                children: [
-                  Icon(Icons.insert_drive_file, size: 20),
-                  SizedBox(width: 8),
-                  Text('Document'),
-                ],
+              child: GestureDetector(
+                onTap: () async {
+                  final file = await MediaPicker.instance.pickDocument();
+                },
+                child: const Row(
+                  children: [
+                    Icon(Icons.insert_drive_file, size: 20),
+                    SizedBox(width: 8),
+                    Text('Document'),
+                  ],
+                ),
               ),
             ),
             const PopupMenuItem(

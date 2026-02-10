@@ -30,6 +30,11 @@ dependencies:
   font_awesome_flutter: ^10.12.0
   intl: ^0.20.1
   visibility_detector: ^0.4.0+2
+  cloudinary_flutter: ^1.3.0
+  cloudinary_url_gen: ^1.8.0
+  cloudinary_api: ^1.1.1
+  image_picker: ^1.2.1
+  file_picker: ^10.3.10
 
 dev_dependencies:
   flutter_test:

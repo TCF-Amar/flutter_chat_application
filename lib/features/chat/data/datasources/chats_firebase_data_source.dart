@@ -23,6 +23,9 @@ class ChatsRemoteDataSourceImpl {
       'chatId': message.chatId,
       'senderId': message.senderId,
       'receiverId': message.receiverId,
+      'senderName': message.senderName,
+      'receiverName': message.receiverName,
+      'senderPhotoUrl': message.senderPhotoUrl,
     });
     // send notification
     // await NotificationServices.instance.sendNotificationToUser(
@@ -71,6 +74,7 @@ class ChatsRemoteDataSourceImpl {
         .collection('chats')
         .doc(chatId)
         .collection('messages')
+        .limit(50)
         .orderBy('timestamp', descending: true)
         .snapshots()
         .map((snapshot) {

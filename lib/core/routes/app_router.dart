@@ -44,14 +44,6 @@ class AppRouter {
         // If authenticated
         if (isAuthenticated) {
           // If profile NOT completed
-          if (!isProfileCompleted) {
-            // Allow user to stay on profile complete page
-            if (currentPath == AppRoutes.profileComplete.path) {
-              return AppRoutes.profileComplete.path;
-            }
-            // Redirect to profile complete page
-            return AppRoutes.profileComplete.path;
-          }
 
           // If profile IS completed
           if (isProfileCompleted) {
@@ -61,6 +53,14 @@ class AppRouter {
                 currentPath == AppRoutes.profileComplete.path) {
               return AppRoutes.home.path;
             }
+          }
+          if (!isProfileCompleted) {
+            // Allow user to stay on profile complete page
+            if (currentPath == AppRoutes.profileComplete.path) {
+              return AppRoutes.profileComplete.path;
+            }
+            // Redirect to profile complete page
+            return AppRoutes.profileComplete.path;
           }
         }
 

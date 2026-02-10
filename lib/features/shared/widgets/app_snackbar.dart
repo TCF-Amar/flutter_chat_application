@@ -214,6 +214,7 @@ class AppSnackbar {
       message: message,
       title: title,
       backgroundColor: backgroundColor,
+
       duration: Duration(seconds: duration),
       action: SnackBarAction(
         label: actionLabel,

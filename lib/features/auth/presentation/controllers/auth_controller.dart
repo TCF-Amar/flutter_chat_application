@@ -122,10 +122,12 @@ class AuthController extends GetxController {
   }
 
   Future<void> signOut() async {
+    _isLoading.value = true;
     final result = await authUsecase.signOut();
     result.fold((failure) {}, (_) {
       _currentUser.value = null;
     });
+    _isLoading.value = false;
   }
 
   // get user by id

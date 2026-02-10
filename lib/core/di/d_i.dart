@@ -3,6 +3,7 @@ import 'package:chat_kare/features/auth/presentation/bindings/auth_binding.dart'
 import 'package:chat_kare/features/chat/presentation/bindings/chats_binding.dart';
 import 'package:chat_kare/features/contacts/presentation/bindings/contacts_binding.dart';
 import 'package:chat_kare/features/home/presentation/bindings/home_binding.dart';
+import 'package:chat_kare/features/notifications/presentation/bindings/notifications_binding.dart';
 import 'package:chat_kare/features/profile/presentation/bindings/profile_binding.dart';
 import 'package:logger/logger.dart';
 
@@ -26,5 +27,6 @@ class DI {
     await ContactsBinding.init();
     await ProfileBinding.init();
     ChatsBinding.init();
+    NotificationsBinding.init();
   }
 }

@@ -8,6 +8,7 @@ import 'package:chat_kare/features/shared/widgets/default_app_bar.dart';
 import 'package:chat_kare/features/shared/widgets/index.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:go_router/go_router.dart';
 
 class ChatsPage extends StatelessWidget {
   const ChatsPage({super.key});
@@ -23,9 +24,23 @@ class ChatsPage extends StatelessWidget {
         actions: [
           PopupMenuButton<String>(
             onSelected: (value) {
-              if (value == 'logout') {
-                Get.find<AuthController>().signOut();
-              }
+              showDialog(
+                context: context,
+                builder: (context) => AlertDialog(
+                  title: const Text("Logout"),
+                  content: const Text("Are you sure you want to logout?"),
+                  actions: [
+                    TextButton(
+                      onPressed: () => context.pop(),
+                      child: const Text("Cancel"),
+                    ),
+                    TextButton(
+                      onPressed: () => Get.find<AuthController>().signOut(),
+                      child: const Text("Logout"),
+                    ),
+                  ],
+                ),
+              );
             },
             itemBuilder: (BuildContext context) {
               return [

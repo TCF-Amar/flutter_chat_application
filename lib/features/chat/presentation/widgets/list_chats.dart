@@ -171,6 +171,8 @@ class ListChats extends StatelessWidget {
                               ),
                               Row(
                                 mainAxisSize: MainAxisSize.min,
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
                                 crossAxisAlignment: CrossAxisAlignment.end,
                                 children: [
                                   if (message.isEdited)

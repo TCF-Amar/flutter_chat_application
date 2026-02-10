@@ -1,12 +1,10 @@
 import 'package:chat_kare/core/routes/app_routes.dart';
 import 'package:chat_kare/core/services/firebase_services.dart';
-import 'package:chat_kare/features/auth/presentation/controllers/auth_controller.dart';
 import 'package:chat_kare/features/contacts/presentation/controllers/contacts_controller.dart';
 import 'package:chat_kare/features/shared/widgets/app_scaffold.dart';
 import 'package:chat_kare/features/shared/widgets/app_snackbar.dart';
 import 'package:chat_kare/features/shared/widgets/app_text.dart';
 import 'package:chat_kare/features/shared/widgets/app_text_form_field.dart';
-// import 'package:chat_kare/features/shared/widgets/default_app_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:go_router/go_router.dart';
@@ -18,10 +16,7 @@ class ContactsPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final controller = Get.find<ContactsController>();
     final fs = Get.find<FirebaseServices>();
-    final auth = Get.find<AuthController>();
-    final me = auth.currentUser;
     return AppScaffold(
-      // appBar: DefaultAppBar(title: "Contacts"),
       body: RefreshIndicator(
         onRefresh: () async {
           controller.refreshContacts();
@@ -73,21 +68,6 @@ class ContactsPage extends StatelessWidget {
                           : controller.searchResults;
                       return Column(
                         children: [
-                          ListTile(
-                            leading: me?.photoUrl != null
-                                ? CircleAvatar(
-                                    radius: 24,
-                                    backgroundImage: NetworkImage(
-                                      me!.photoUrl!,
-                                    ),
-                                  )
-                                : const CircleAvatar(
-                                    radius: 24,
-                                    child: Icon(Icons.person),
-                                  ),
-                            title: AppText("${me!.displayName} (You)"),
-                            subtitle: AppText(me.phoneNumber ?? me.email),
-                          ),
                           ...contacts.map((contact) {
                             // first show owner contact
 
@@ -98,34 +78,34 @@ class ContactsPage extends StatelessWidget {
                               onLongPressUp: () =>
                                   AppSnackbar.success(message: 'Contact long'),
                               child: ListTile(
-                                // onLongPress: () {
-                                //   showDialog(
-                                //     context: context,
-                                //     builder: (context) {
-                                //       return AlertDialog(
-                                //         title: const AppText("Delete Contact"),
-                                //         content: const AppText(
-                                //           "Are you sure you want to delete this contact?",
-                                //         ),
-                                //         actions: [
-                                //           TextButton(
-                                //             onPressed: () {
-                                //               context.pop();
-                                //             },
-                                //             child: const AppText("Cancel"),
-                                //           ),
-                                //           TextButton(
-                                //             onPressed: () {
-                                //               controller.deleteContact();
-                                //               context.pop();
-                                //             },
-                                //             child: const AppText("Delete"),
-                                //           ),
-                                //         ],
-                                //       );
-                                //     },
-                                //   );
-                                // },
+                                onLongPress: () {
+                                  showDialog(
+                                    context: context,
+                                    builder: (context) {
+                                      return AlertDialog(
+                                        title: const AppText("Delete Contact"),
+                                        content: const AppText(
+                                          "Are you sure you want to delete this contact?",
+                                        ),
+                                        actions: [
+                                          TextButton(
+                                            onPressed: () {
+                                              context.pop();
+                                            },
+                                            child: const AppText("Cancel"),
+                                          ),
+                                          TextButton(
+                                            onPressed: () {
+                                              controller.deleteContact();
+                                              context.pop();
+                                            },
+                                            child: const AppText("Delete"),
+                                          ),
+                                        ],
+                                      );
+                                    },
+                                  );
+                                },
                                 onTap: () {
                                   context.push(
                                     AppRoutes.chat.path,
@@ -160,7 +140,7 @@ class ContactsPage extends StatelessWidget {
                                 ),
                                 subtitle:
                                     (contact.email != null ||
-                                            contact.phoneNumber != null)
+                                        contact.phoneNumber != null)
                                     ? AppText(
                                         contact.phoneNumber ??
                                             contact.email ??
