@@ -14,6 +14,9 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
+  // Set the background messaging handler early on, as a named top-level function
+
   await DI.instance.init();
 
   // Initialize router with AuthStateNotifier

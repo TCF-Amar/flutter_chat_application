@@ -1,3 +1,4 @@
+import 'package:chat_kare/core/services/notification_services.dart';
 import 'package:chat_kare/features/notifications/data/models/notifications_model.dart';
 import 'package:chat_kare/features/shared/widgets/app_snackbar.dart';
 import 'package:get/get.dart';
@@ -61,9 +62,13 @@ class NotificationsController extends GetxController {
             AppSnackbar.error(message: failure.message);
             isLoading.value = false;
           },
-          (notifications) {
+          (notifications) async {
             _notifications.value = notifications;
             isLoading.value = false;
+            await NotificationServices.instance.show(
+              title: notifications.last.senderName,
+              body: notifications.last.body,
+            );
           },
         );
       },

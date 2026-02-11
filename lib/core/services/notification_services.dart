@@ -57,15 +57,24 @@ class NotificationServices {
   }
 
   Future<void> show({required String title, required String body}) async {
-    const androidDetails = AndroidNotificationDetails(
+    final androidDetails = AndroidNotificationDetails(
       icon: '@mipmap/ic_launcher',
       'chat_channel',
       'Chat Notifications',
       importance: Importance.max,
-      priority: Priority.high,
+      priority: Priority.max,
+      actions: [
+        AndroidNotificationAction(
+          'mark_as_read',
+          'Mark as Read',
+          showsUserInterface: true,
+        ),
+        AndroidNotificationAction('close', 'Close', showsUserInterface: true),
+        AndroidNotificationAction('reply', 'Reply', showsUserInterface: true),
+      ],
     );
 
-    const details = NotificationDetails(android: androidDetails);
+    final details = NotificationDetails(android: androidDetails);
 
     await _plugin.show(
       id: DateTime.now().millisecondsSinceEpoch ~/ 1000,
@@ -248,39 +257,38 @@ class NotificationServices {
   }
 
   /// Send notification to a specific user by their FCM token
-  Future<void> sendNotificationToUser({
-    required String userId,
-    required String title,
-    required String body,
-  }) async {
-    try {
-      final userDoc = await _firestore.collection('users').doc(userId).get();
+  // Future<void> sendNotificationToUser({
+  //   required String userId,
+  //   required String title,
+  //   required String body,
+  // }) async {
+  //   try {
+  //     final userDoc = await _firestore.collection('users').doc(userId).get();
 
-      if (!userDoc.exists) {
-        _logger.w('User $userId not found');
-        return;
-      }
+  //     if (!userDoc.exists) {
+  //       _logger.w('User $userId not found');
+  //       return;
+  //     }
 
-      final fcmToken = userDoc.data()?['fcmToken'] as String?;
+  //     final fcmToken = userDoc.data()?['fcmToken'] as String?;
 
-      if (fcmToken == null) {
-        _logger.w('No FCM token found for user $userId');
-        return;
-      }
+  //     if (fcmToken == null) {
+  //       _logger.w('No FCM token found for user $userId');
+  //       return;
+  //     }
 
-      _logger.i('Sending notification to user $userId with token: $fcmToken');
+  //     _logger.i('Sending notification to user $userId with token: $fcmToken');
 
-      // Note: To actually send FCM messages, you need to use Firebase Cloud Functions
-      // or a backend server with Firebase Admin SDK. This is just a placeholder.
-      // For now, we'll show a local notification as a demo
-      await show(title: title, body: body);
-      
+  //     // Note: To actually send FCM messages, you need to use Firebase Cloud Functions
+  //     // or a backend server with Firebase Admin SDK. This is just a placeholder.
+  //     // For now, we'll show a local notification as a demo
+  //     await show(title: title, body: body);
 
-      _logger.i('Notification sent to user $userId');
-    } catch (e) {
-      _logger.e('Error sending notification to user: $e');
-    }
-  }
+  //     _logger.i('Notification sent to user $userId');
+  //   } catch (e) {
+  //     _logger.e('Error sending notification to user: $e');
+  //   }
+  // }
 
   void dispose() {
     _onTapStream.close();

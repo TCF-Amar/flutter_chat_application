@@ -74,6 +74,7 @@ class _AppTextFormFieldState extends State<AppTextFormField> {
     return TextFormField(
       controller: widget.controller,
       focusNode: widget.focusNode,
+      textCapitalization: TextCapitalization.sentences,
       obscureText: widget.isPassword ? _obscureText : false,
       keyboardType: widget.keyboardType,
       textInputAction: widget.textInputAction,

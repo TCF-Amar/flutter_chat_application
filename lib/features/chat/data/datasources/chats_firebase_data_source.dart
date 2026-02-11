@@ -29,11 +29,12 @@ class ChatsRemoteDataSourceImpl {
       'senderPhotoUrl': message.senderPhotoUrl,
     });
     // send notification
-    await NotificationServices.instance.sendNotificationToUser(
-      userId: message.receiverId,
-      title: message.senderName,
-      body: message.text,
-    );
+    // await NotificationServices.instance.sendNotificationToUser(
+    //   userId: message.receiverId,
+    //   title: message.senderName,
+    //   body: message.text,
+    // );
+   
 
     // Update Chat Metadata for Sender
     final senderChatRef = fs.firestore
