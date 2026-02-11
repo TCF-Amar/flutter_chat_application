@@ -47,13 +47,17 @@ class AppRouter {
 
         // If authenticated
         if (isAuthenticated) {
-          // If profile NOT completed
+          // Wait for user profile to be loaded
+          if (authStateNotifier.isLoadingUserProfile) {
+            return null;
+          }
 
           // If profile IS completed
           if (isProfileCompleted) {
-            // Prevent access to signin/signup
+            // Prevent access to signin/signup or splash
             if (currentPath == AppRoutes.signin.path ||
                 currentPath == AppRoutes.signup.path ||
+                currentPath == AppRoutes.splash.path ||
                 currentPath == AppRoutes.profileComplete.path) {
               return AppRoutes.home.path;
             }
@@ -105,6 +109,11 @@ class AppRouter {
           name: AppRoutes.chat.name,
           path: AppRoutes.chat.path,
           builder: (context, state) {
+            if (state.extra == null || state.extra is! ContactsEntity) {
+              return const Scaffold(
+                body: Center(child: Text('Error: Contact details missing')),
+              );
+            }
             final contact = state.extra as ContactsEntity;
             Get.lazyPut(
               () => ChatController(
@@ -119,6 +128,11 @@ class AppRouter {
           name: AppRoutes.mediaPreview.name,
           path: AppRoutes.mediaPreview.path,
           builder: (context, state) {
+            if (state.extra == null || state.extra is! Map<String, dynamic>) {
+              return const Scaffold(
+                body: Center(child: Text('Error: Media details missing')),
+              );
+            }
             final extras = state.extra as Map<String, dynamic>;
             final file = extras['file'] as File;
             final type = extras['type'] as MessageType;
@@ -131,6 +145,11 @@ class AppRouter {
           name: AppRoutes.networkMediaView.name,
           path: AppRoutes.networkMediaView.path,
           builder: (context, state) {
+            if (state.extra == null || state.extra is! Map<String, dynamic>) {
+              return const Scaffold(
+                body: Center(child: Text('Error: Media details missing')),
+              );
+            }
             final extras = state.extra as Map<String, dynamic>;
             final url = extras['url'] as String;
             final type = extras['type'] as MessageType;

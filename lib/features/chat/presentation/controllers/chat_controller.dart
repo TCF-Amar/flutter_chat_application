@@ -15,6 +15,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:chat_kare/core/services/auth_state_notifier.dart';
 import 'package:get/get.dart';
 import 'package:logger/logger.dart';
+import 'package:scroll_to_index/scroll_to_index.dart';
 
 /*
  * ChatController manages all chat functionality including:
@@ -73,7 +74,8 @@ class ChatController extends GetxController {
   //* ===========================================================================
   final TextEditingController messageController = TextEditingController();
   final FocusNode messageFocusNode = FocusNode();
-  final ScrollController scrollController = ScrollController();
+  final AutoScrollController scrollController = AutoScrollController();
+  final RxString highlightedMessageId = ''.obs;
 
   //* ===========================================================================
   //* STREAM SUBSCRIPTIONS & TIMERS
@@ -155,6 +157,7 @@ class ChatController extends GetxController {
   void _onMessagesUpdated(List<ChatsEntity> newMessages) {
     newMessages.sort((a, b) => a.timestamp.compareTo(b.timestamp));
     bool isInitialLoad = isLoading.value;
+    bool wasLoadingMore = isLoadingMore.value;
 
     messages.assignAll(newMessages);
     isLoading.value = false;
@@ -167,7 +170,7 @@ class ChatController extends GetxController {
         if (scrollController.hasClients) {
           scrollController.jumpTo(scrollController.position.maxScrollExtent);
         }
-      } else {
+      } else if (!wasLoadingMore) {
         scrollToBottom();
       }
     });
@@ -313,6 +316,7 @@ class ChatController extends GetxController {
       replyToSenderName: replyTo?.senderName,
       replyToText: replyTo?.text,
       replyToType: replyTo?.type,
+      replyToMediaUrl: replyTo?.mediaUrl,
     );
 
     cancelReply();
@@ -550,6 +554,7 @@ class ChatController extends GetxController {
         replyToSenderName: replyTo?.senderName,
         replyToText: replyTo?.text,
         replyToType: replyTo?.type,
+        replyToMediaUrl: replyTo?.mediaUrl,
         mediaUrl: mediaUrl,
         mediaSize: await file.length(),
       );
@@ -596,6 +601,28 @@ class ChatController extends GetxController {
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeOut,
       );
+    }
+  }
+
+  Future<void> scrollToMessage(String messageId) async {
+    final index = messages.indexWhere((m) => m.id == messageId);
+    if (index != -1) {
+      await scrollController.scrollToIndex(
+        index,
+        preferPosition: AutoScrollPosition.middle,
+        duration: const Duration(milliseconds: 500),
+      );
+
+      highlightedMessageId.value = messageId;
+      Future.delayed(const Duration(seconds: 3), () {
+        highlightedMessageId.value = '';
+      });
+    } else {
+      // Message not found in current list, could ideally load more messages or show info
+      // Get.snackbar(
+      //   "Message not found",
+      //   "The message might be too old or deleted",
+      // );
     }
   }
 
@@ -684,6 +711,7 @@ class ChatController extends GetxController {
         replyToSenderName: replyTo?.senderName,
         replyToText: replyTo?.text,
         replyToType: replyTo?.type,
+        replyToMediaUrl: replyTo?.mediaUrl,
       );
 
       // Clear reply state

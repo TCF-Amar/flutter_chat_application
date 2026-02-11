@@ -1,6 +1,8 @@
 import 'package:chat_kare/core/theme/theme_extensions.dart';
 import 'package:chat_kare/features/chat/presentation/controllers/chat_controller.dart';
 import 'package:chat_kare/features/contacts/domain/entities/contacts_entity.dart';
+import 'package:chat_kare/features/calls/presentation/pages/call_page.dart';
+import 'package:chat_kare/features/calls/presentation/widgets/calls_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:go_router/go_router.dart';
@@ -149,11 +151,27 @@ class _ChatAppBarWidgetState extends State<ChatAppBarWidget> {
             : [
                 IconButton(
                   icon: Icon(Icons.video_call, color: context.colorScheme.icon),
-                  onPressed: () {},
+                  onPressed: () {
+                    showCallBanner(
+                      context,
+                      name: widget.contact.name,
+                      photoUrl: widget.contact.photoUrl,
+                      callType: CallType.video,
+                      initialStatus: CallStatus.outgoing,
+                    );
+                  },
                 ),
                 IconButton(
                   icon: Icon(Icons.call, color: context.colorScheme.icon),
-                  onPressed: () {},
+                  onPressed: () {
+                    showCallBanner(
+                      context,
+                      name: widget.contact.name,
+                      photoUrl: widget.contact.photoUrl,
+                      callType: CallType.audio,
+                      initialStatus: CallStatus.outgoing,
+                    );
+                  },
                 ),
                 IconButton(
                   icon: Icon(Icons.more_vert, color: context.colorScheme.icon),

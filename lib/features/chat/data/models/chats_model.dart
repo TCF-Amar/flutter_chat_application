@@ -24,6 +24,7 @@ class ChatsModel extends ChatsEntity {
     super.replyToSenderName,
     super.replyToText,
     super.replyToType,
+    super.replyToMediaUrl,
   });
 
   factory ChatsModel.fromJson(Map<String, dynamic> json) {
@@ -50,6 +51,7 @@ class ChatsModel extends ChatsEntity {
       replyToType: json["replyToType"] != null
           ? MessageType.values.firstWhere((e) => e.name == json["replyToType"])
           : null,
+      replyToMediaUrl: json["replyToMediaUrl"],
     );
   }
 
@@ -74,6 +76,7 @@ class ChatsModel extends ChatsEntity {
       "replyToSenderName": replyToSenderName,
       "replyToText": replyToText,
       "replyToType": replyToType?.name,
+      "replyToMediaUrl": replyToMediaUrl,
     };
   }
 
@@ -99,6 +102,7 @@ class ChatsModel extends ChatsEntity {
       replyToSenderName: replyToSenderName,
       replyToText: replyToText,
       replyToType: replyToType,
+      replyToMediaUrl: replyToMediaUrl,
     );
   }
 
@@ -125,6 +129,7 @@ class ChatsModel extends ChatsEntity {
       replyToSenderName: entity.replyToSenderName,
       replyToText: entity.replyToText,
       replyToType: entity.replyToType,
+      replyToMediaUrl: entity.replyToMediaUrl,
     );
   }
 }

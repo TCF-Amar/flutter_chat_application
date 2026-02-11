@@ -19,6 +19,7 @@ class ChatsEntity {
   final String? replyToSenderName;
   final String? replyToText;
   final MessageType? replyToType;
+  final String? replyToMediaUrl;
 
   ChatsEntity({
     required this.id,
@@ -41,6 +42,7 @@ class ChatsEntity {
     this.replyToSenderName,
     this.replyToText,
     this.replyToType,
+    this.replyToMediaUrl,
   });
 }
 

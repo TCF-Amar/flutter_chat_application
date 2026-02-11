@@ -1,10 +1,8 @@
-import 'dart:io';
 
 import 'package:chat_kare/core/routes/app_routes.dart';
 import 'package:chat_kare/core/theme/theme_extensions.dart';
 import 'package:go_router/go_router.dart';
 import 'package:chat_kare/features/chat/presentation/controllers/chat_controller.dart';
-import 'package:chat_kare/features/chat/presentation/widgets/media_preview.dart';
 import 'package:chat_kare/features/shared/widgets/app_text.dart';
 import 'package:chat_kare/features/shared/widgets/app_text_form_field.dart';
 import 'package:flutter/material.dart';
