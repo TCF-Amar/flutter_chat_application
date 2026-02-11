@@ -1,4 +1,5 @@
 import 'package:chat_kare/core/services/firebase_services.dart';
+import 'package:chat_kare/core/services/notification_services.dart';
 import 'package:chat_kare/features/chat/data/models/chats_model.dart';
 import 'package:chat_kare/features/chat/data/models/chat_meta_data.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -28,11 +29,11 @@ class ChatsRemoteDataSourceImpl {
       'senderPhotoUrl': message.senderPhotoUrl,
     });
     // send notification
-    // await NotificationServices.instance.sendNotificationToUser(
-    //   userId: message.receiverId,
-    //   title: message.senderName,
-    //   body: message.text,
-    // );
+    await NotificationServices.instance.sendNotificationToUser(
+      userId: message.receiverId,
+      title: message.senderName,
+      body: message.text,
+    );
 
     // Update Chat Metadata for Sender
     final senderChatRef = fs.firestore

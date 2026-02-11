@@ -1,7 +1,7 @@
 import 'package:chat_kare/core/theme/theme_extensions.dart';
 import 'package:chat_kare/features/chat/presentation/controllers/chat_controller.dart';
 import 'package:chat_kare/features/contacts/domain/entities/contacts_entity.dart';
-import 'package:chat_kare/features/calls/presentation/pages/call_page.dart';
+import 'package:chat_kare/features/calls/presentation/pages/call_banner_page.dart';
 import 'package:chat_kare/features/calls/presentation/widgets/calls_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';

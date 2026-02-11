@@ -49,6 +49,11 @@
 	<string>Camera access required</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Gallery access required</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Camera access for video call</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Microphone access for audio call</string>
+
 
 </dict>
 </plist>
