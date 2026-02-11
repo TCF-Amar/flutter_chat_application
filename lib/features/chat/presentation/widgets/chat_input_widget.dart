@@ -1,7 +1,8 @@
 import 'dart:io';
 
+import 'package:chat_kare/core/routes/app_routes.dart';
 import 'package:chat_kare/core/theme/theme_extensions.dart';
-import 'package:chat_kare/core/utils/media_picker.dart';
+import 'package:go_router/go_router.dart';
 import 'package:chat_kare/features/chat/presentation/controllers/chat_controller.dart';
 import 'package:chat_kare/features/chat/presentation/widgets/media_preview.dart';
 import 'package:chat_kare/features/shared/widgets/app_text.dart';
@@ -164,54 +165,54 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
           icon: const Icon(Icons.attach_file),
           onSelected: (value) => _handleAttachment(value),
           itemBuilder: (context) => [
-            PopupMenuItem(
+            const PopupMenuItem(
               value: 'camera',
-              child: GestureDetector(
-                onTap: () async {
-                  final file = await MediaPicker.instance.pickImageFromCamera();
-                  if (file != null) {
-                    print(file.path);
-                  }
-                },
-                child: const Row(
-                  children: [
-                    Icon(Icons.camera_alt, size: 20),
-                    SizedBox(width: 8),
-                    Text('Camera'),
-                  ],
-                ),
+              child: Row(
+                children: [
+                  Icon(Icons.camera_alt, size: 20),
+                  SizedBox(width: 8),
+                  Text('Camera'),
+                ],
               ),
             ),
-            PopupMenuItem(
+            const PopupMenuItem(
               value: 'gallery',
-              child: GestureDetector(
-                onTap: () async {
-                  final file = await MediaPicker.instance
-                      .pickImageFromGallery();
-                  if (file != null) {}
-                },
-                child: const Row(
-                  children: [
-                    Icon(Icons.photo_library, size: 20),
-                    SizedBox(width: 8),
-                    Text('Gallery'),
-                  ],
-                ),
+              child: Row(
+                children: [
+                  Icon(Icons.photo_library, size: 20),
+                  SizedBox(width: 8),
+                  Text('Gallery'),
+                ],
               ),
             ),
-            PopupMenuItem(
+            const PopupMenuItem(
+              value: 'cameraVideo',
+              child: Row(
+                children: [
+                  Icon(Icons.camera_alt, size: 20),
+                  SizedBox(width: 8),
+                  Text('Camera Video'),
+                ],
+              ),
+            ),
+            const PopupMenuItem(
+              value: 'galleryVideo',
+              child: Row(
+                children: [
+                  Icon(Icons.photo_library, size: 20),
+                  SizedBox(width: 8),
+                  Text('Gallery Video'),
+                ],
+              ),
+            ),
+            const PopupMenuItem(
               value: 'document',
-              child: GestureDetector(
-                onTap: () async {
-                  final file = await MediaPicker.instance.pickDocument();
-                },
-                child: const Row(
-                  children: [
-                    Icon(Icons.insert_drive_file, size: 20),
-                    SizedBox(width: 8),
-                    Text('Document'),
-                  ],
-                ),
+              child: Row(
+                children: [
+                  Icon(Icons.insert_drive_file, size: 20),
+                  SizedBox(width: 8),
+                  Text('Document'),
+                ],
               ),
             ),
             const PopupMenuItem(
@@ -285,20 +286,44 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
     // Implement emoji picker
   }
 
-  void _handleAttachment(String type) {
+  void _handleAttachment(String type) async {
+    Map<String, dynamic>? result;
     switch (type) {
       case 'camera':
-        widget.controller.takePhoto();
+        result = await widget.controller.takePhoto();
         break;
       case 'gallery':
-        widget.controller.pickImageFromGallery();
+        result = await widget.controller.pickImageFromGallery();
+        break;
+      case 'cameraVideo':
+        result = await widget.controller.pickVideoFromCamera();
+        break;
+      case 'galleryVideo':
+        result = await widget.controller.pickVideoFromGallery();
         break;
       case 'document':
-        widget.controller.pickDocument();
+        result = await widget.controller.pickDocument();
         break;
       case 'location':
         widget.controller.shareLocation();
         break;
+    }
+
+    if (result != null && mounted) {
+      context.pushNamed(
+        AppRoutes.mediaPreview.name,
+        extra: {
+          'file': result['file'],
+          'type': result['type'],
+          'onSend': (String caption) {
+            widget.controller.sendMediaMessage(
+              result!['file'],
+              caption,
+              result['type'],
+            );
+          },
+        },
+      );
     }
   }
 

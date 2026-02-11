@@ -28,4 +28,12 @@ class AppRoutes {
     path: '/profileComplete',
   );
   static final RouteModels chat = RouteModels(name: 'chat', path: '/chat');
+  static final RouteModels mediaPreview = RouteModels(
+    name: 'mediaPreview',
+    path: '/mediaPreview',
+  );
+  static final RouteModels networkMediaView = RouteModels(
+    name: 'networkMediaView',
+    path: '/networkMediaView',
+  );
 }

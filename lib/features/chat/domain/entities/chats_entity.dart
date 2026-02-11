@@ -44,7 +44,7 @@ class ChatsEntity {
   });
 }
 
-enum MessageType { text, image, video, audio, document }
+enum MessageType { text, image, video, audio, document, location }
 
 enum MessageStatus { sending, sent, delivered, read }
 

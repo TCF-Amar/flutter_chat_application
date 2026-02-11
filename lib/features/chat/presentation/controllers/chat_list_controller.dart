@@ -9,6 +9,9 @@ import 'package:chat_kare/core/services/auth_state_notifier.dart';
 import 'package:get/get.dart';
 
 class ChatListController extends GetxController {
+  //* ==============================================================================
+  //* DEPENDENCIES
+  //* ==============================================================================
   final ChatsUsecase chatsUsecase;
   final AuthUsecase authUseCase;
   final AuthStateNotifier authStateNotifier;
@@ -19,27 +22,27 @@ class ChatListController extends GetxController {
     required this.authStateNotifier,
   });
 
+  //* ==============================================================================
+  //* STATE VARIABLES
+  //* ==============================================================================
   final RxList<ChatMetaData> chats = <ChatMetaData>[].obs;
   final RxBool isLoading = false.obs;
-  StreamSubscription? _chatsSubscription;
   final Rxn<UserEntity> currentUser = Rxn<UserEntity>();
 
+  //* ==============================================================================
+  //* PRIVATE VARIABLES
+  //* ==============================================================================
+  StreamSubscription? _chatsSubscription;
+
+  //* ==============================================================================
+  //* LIFECYCLE METHODS
+  //* ==============================================================================
   @override
   void onInit() {
     super.onInit();
     authStateNotifier.addListener(_handleAuthStateChange);
     if (authStateNotifier.isAuthenticated) {
       _fetchCurrentUserAndChats();
-    }
-  }
-
-  void _handleAuthStateChange() {
-    if (authStateNotifier.isAuthenticated) {
-      _fetchCurrentUserAndChats();
-    } else {
-      chats.clear();
-      currentUser.value = null;
-      _chatsSubscription?.cancel();
     }
   }
 
@@ -50,6 +53,22 @@ class ChatListController extends GetxController {
     super.onClose();
   }
 
+  //* ==============================================================================
+  //* AUTH STATE HANDLING
+  //* ==============================================================================
+  void _handleAuthStateChange() {
+    if (authStateNotifier.isAuthenticated) {
+      _fetchCurrentUserAndChats();
+    } else {
+      chats.clear();
+      currentUser.value = null;
+      _chatsSubscription?.cancel();
+    }
+  }
+
+  //* ==============================================================================
+  //* DATA FETCHING
+  //* ==============================================================================
   Future<void> _fetchCurrentUserAndChats() async {
     isLoading.value = true;
     try {
@@ -80,12 +99,15 @@ class ChatListController extends GetxController {
           },
           onError: (error) {
             isLoading.value = false;
-            // Handle stream error
+            //* Handle stream error
           },
         );
   }
 
-  // Helper to convert ChatMetaData to ContactsEntity for navigation
+  //* ==============================================================================
+  //* HELPERS
+  //* ==============================================================================
+  //* Helper to convert ChatMetaData to ContactsEntity for navigation
   ContactsEntity getContactFromChat(ChatMetaData chat) {
     return ContactsEntity(
       id: chat.receiverId,

@@ -12,6 +12,10 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:chat_kare/core/routes/app_routes.dart';
 import 'package:chat_kare/features/chat/presentation/controllers/chat_controller.dart';
+import 'dart:io';
+import 'package:chat_kare/features/chat/domain/entities/chats_entity.dart';
+import 'package:chat_kare/features/chat/presentation/pages/media_preview_page.dart';
+import 'package:chat_kare/features/chat/presentation/pages/network_media_view_page.dart';
 import 'package:get/get.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
@@ -109,6 +113,29 @@ class AppRouter {
               ),
             );
             return ChatPage(contact: contact);
+          },
+        ),
+        GoRoute(
+          name: AppRoutes.mediaPreview.name,
+          path: AppRoutes.mediaPreview.path,
+          builder: (context, state) {
+            final extras = state.extra as Map<String, dynamic>;
+            final file = extras['file'] as File;
+            final type = extras['type'] as MessageType;
+            final onSend = extras['onSend'] as Function(String);
+
+            return MediaPreviewPage(file: file, type: type, onSend: onSend);
+          },
+        ),
+        GoRoute(
+          name: AppRoutes.networkMediaView.name,
+          path: AppRoutes.networkMediaView.path,
+          builder: (context, state) {
+            final extras = state.extra as Map<String, dynamic>;
+            final url = extras['url'] as String;
+            final type = extras['type'] as MessageType;
+
+            return NetworkMediaViewPage(url: url, type: type);
           },
         ),
       ],

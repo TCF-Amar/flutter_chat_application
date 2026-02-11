@@ -12,8 +12,8 @@ class ChatsUsecase {
     return await chatsRepository.sendMessage(message);
   }
 
-  Stream<List<ChatsEntity>> getMessages(String chatId) {
-    return chatsRepository.getMessagesStream(chatId);
+  Stream<List<ChatsEntity>> getMessages(String chatId, {int limit = 20}) {
+    return chatsRepository.getMessagesStream(chatId, limit: limit);
   }
 
   Stream<List<String>> getTypingUsersStream(String chatId) {

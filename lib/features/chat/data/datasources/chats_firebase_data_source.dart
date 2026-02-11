@@ -69,12 +69,12 @@ class ChatsRemoteDataSourceImpl {
   }
 
   // get messages
-  Stream<List<ChatsModel>> getMessages(String chatId) {
+  Stream<List<ChatsModel>> getMessages(String chatId, int limit) {
     return fs.firestore
         .collection('chats')
         .doc(chatId)
         .collection('messages')
-        .limit(50)
+        .limit(limit)
         .orderBy('timestamp', descending: true)
         .snapshots()
         .map((snapshot) {

@@ -28,8 +28,8 @@ class ChatsRepositoryImpl implements ChatsRepository {
   }
 
   @override
-  Stream<List<ChatsEntity>> getMessagesStream(String chatId) {
-    return chatFirebaseDataSource.getMessages(chatId).map((models) {
+  Stream<List<ChatsEntity>> getMessagesStream(String chatId, {int limit = 20}) {
+    return chatFirebaseDataSource.getMessages(chatId, limit).map((models) {
       return models.map((model) => model.toEntity()).toList();
     });
   }

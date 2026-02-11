@@ -1,6 +1,10 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:chat_kare/core/theme/theme_extensions.dart';
 import 'package:chat_kare/features/chat/domain/entities/chats_entity.dart';
+import 'package:chat_kare/core/routes/app_routes.dart';
 import 'package:chat_kare/features/chat/presentation/controllers/chat_controller.dart';
+import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import 'package:chat_kare/features/chat/presentation/widgets/swipe_to_reply.dart';
 import 'package:chat_kare/features/shared/widgets/app_text.dart';
@@ -161,12 +165,11 @@ class ListChats extends StatelessWidget {
                             runSpacing: 2, // Space if it wraps
                             children: [
                               Padding(
-                                padding: const EdgeInsets.only(bottom: 2),
-                                child: AppText(
-                                  message.text,
-                                  fontSize: 16,
-                                  overflow: TextOverflow.visible,
-                                  color: isMe ? Colors.white : null,
+                                padding: const EdgeInsets.only(bottom: 0),
+                                child: _buildMessageContent(
+                                  context,
+                                  message,
+                                  isMe,
                                 ),
                               ),
                               Row(
@@ -233,5 +236,150 @@ class ListChats extends StatelessWidget {
         },
       );
     });
+  }
+
+  Widget _buildMessageContent(
+    BuildContext context,
+    ChatsEntity message,
+    bool isMe,
+  ) {
+    switch (message.type) {
+      case MessageType.image:
+        return _buildImageMessage(context, message);
+      case MessageType.video:
+        return _buildVideoMessage(context, message);
+      case MessageType.location:
+        return _buildLocationMessage(context, message, isMe);
+      case MessageType.document:
+        return _buildDocumentMessage(context, message, isMe);
+      case MessageType.text:
+      default:
+        return AppText(
+          message.text,
+          fontSize: 16,
+          overflow: TextOverflow.visible,
+          // color: isMe ? Colors.white : null,
+        );
+    }
+  }
+
+  Widget _buildImageMessage(BuildContext context, ChatsEntity message) {
+    return GestureDetector(
+      onTap: () {
+        context.pushNamed(
+          AppRoutes.networkMediaView.name,
+          extra: {'url': message.mediaUrl, 'type': MessageType.image},
+        );
+      },
+      child: Column(
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: CachedNetworkImage(
+              imageUrl: message.mediaUrl ?? '',
+              placeholder: (context, url) => const CircularProgressIndicator(),
+              errorWidget: (context, url, error) => const Icon(Icons.error),
+              width: 200,
+              fit: BoxFit.cover,
+            ),
+          ),
+          if (message.text.isNotEmpty) ...[
+            const SizedBox(height: 4),
+            AppText(
+              message.text,
+              fontSize: 16,
+              overflow: TextOverflow.visible,
+              // color: isMe ? Colors.white : null,
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildVideoMessage(BuildContext context, ChatsEntity message) {
+    return GestureDetector(
+      onTap: () {
+        context.pushNamed(
+          AppRoutes.networkMediaView.name,
+          extra: {'url': message.mediaUrl, 'type': MessageType.video},
+        );
+      },
+      child: Container(
+        width: 200,
+        height: 150,
+        decoration: BoxDecoration(
+          color: Colors.black.withValues(
+            alpha: 0.2,
+          ), // Updated for deprecated withOpacity
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: const Center(
+          child: Icon(Icons.play_circle_fill, size: 50, color: Colors.white),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLocationMessage(
+    BuildContext context,
+    ChatsEntity message,
+    bool isMe,
+  ) {
+    return GestureDetector(
+      onTap: () async {
+        final uri = Uri.parse(message.text);
+        if (await canLaunchUrl(uri)) {
+          await launchUrl(uri);
+        }
+      },
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.location_on, color: isMe ? Colors.white : Colors.red),
+          const SizedBox(width: 8),
+          Flexible(
+            child: Text(
+              'View Location',
+              style: TextStyle(
+                color: isMe ? Colors.white : Colors.blue,
+                decoration: TextDecoration.underline,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDocumentMessage(
+    BuildContext context,
+    ChatsEntity message,
+    bool isMe,
+  ) {
+    return GestureDetector(
+      onTap: () async {
+        final uri = Uri.parse(message.mediaUrl ?? '');
+        if (await canLaunchUrl(uri)) {
+          await launchUrl(uri);
+        }
+      },
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            Icons.insert_drive_file,
+            color: isMe ? Colors.white : Colors.grey,
+          ),
+          const SizedBox(width: 8),
+          Flexible(
+            child: Text(
+              message.text.isNotEmpty ? message.text : 'Document',
+              style: TextStyle(color: isMe ? Colors.white : Colors.black),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

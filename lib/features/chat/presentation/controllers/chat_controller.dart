@@ -1,5 +1,8 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:chat_kare/core/services/firebase_services.dart';
+import 'package:chat_kare/core/utils/cloudinary_utils.dart';
+import 'package:chat_kare/core/utils/media_picker.dart';
 import 'package:chat_kare/features/auth/domain/entities/user_entity.dart';
 import 'package:chat_kare/features/auth/domain/usecases/auth_usecase.dart';
 import 'package:chat_kare/features/chat/domain/entities/chats_entity.dart';
@@ -8,16 +11,31 @@ import 'package:chat_kare/core/services/notification_services.dart';
 import 'package:chat_kare/features/contacts/domain/entities/contacts_entity.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-
+import 'package:geolocator/geolocator.dart';
 import 'package:chat_kare/core/services/auth_state_notifier.dart';
 import 'package:get/get.dart';
+import 'package:logger/logger.dart';
 
+/*
+ * ChatController manages all chat functionality including:
+ * - Real-time message streaming
+ * - Typing indicators
+ * - Message sending (text/media)
+ * - Edit/Delete/Reply features
+ * - Selection mode for bulk operations
+ * - Media handling (images/documents)
+ */
 class ChatController extends GetxController {
+  //? Logger
+  final Logger log = Logger();
+  //* ===========================================================================
+  //* DEPENDENCIES & SERVICES
+  //* ===========================================================================
   final ContactsEntity contact;
   final ChatsRepository chatsRepository;
   final NotificationServices notificationService;
   final AuthUsecase authUsecase;
-  final AuthStateNotifier authStateNotifier; // Injected
+  final AuthStateNotifier authStateNotifier;
   final FirebaseServices fs = Get.find();
 
   ChatController({required this.contact, required this.authStateNotifier})
@@ -25,40 +43,80 @@ class ChatController extends GetxController {
       notificationService = Get.find(),
       authUsecase = Get.find();
 
+  //* ===========================================================================
+  //* REACTIVE STATE
+  //* ===========================================================================
+  //*/ Current chat user info
   final Rx<UserEntity?> user = Rx<UserEntity?>(null);
+
+  //*/ List of all chat messages
   final RxList<ChatsEntity> messages = <ChatsEntity>[].obs;
+
+  //*/ Loading state for messages
   final RxBool isLoading = false.obs;
+
+  //*/ Indicates if other user is typing
   final RxBool isOtherUserTyping = false.obs;
+
+  //*/ Error messages for UI display
   final RxString errorMessage = ''.obs;
+
+  //*/ Pagination
+  final RxInt messageLimit = 20.obs;
+  final RxBool isLoadingMore = false.obs;
+
+  //*/ Chat notification mute status
   final RxBool isMuted = false.obs;
 
+  //* ===========================================================================
+  //* UI CONTROLLERS
+  //* ===========================================================================
   final TextEditingController messageController = TextEditingController();
-
   final FocusNode messageFocusNode = FocusNode();
   final ScrollController scrollController = ScrollController();
 
+  //* ===========================================================================
+  //* STREAM SUBSCRIPTIONS & TIMERS
+  //* ===========================================================================
   Timer? _typingTimer;
   StreamSubscription<List<ChatsEntity>>? _messagesSubscription;
   StreamSubscription<List<String>>? _typingSubscription;
   StreamSubscription<int>? _unreadCountSubscription;
 
+  //* ===========================================================================
+  //* UTILITY GETTERS
+  //* ===========================================================================
+  //*/ Generates unique chat ID between two users
   String get chatId => _generateChatId();
 
+  //* ===========================================================================
+  //* LIFECYCLE METHODS
+  //* ===========================================================================
   @override
   void onInit() {
     super.onInit();
     _loadUserInfo();
-    // messageController.addListener(_onTextChanged); // Moved to onChanged in UI
+    _setupScrollListener();
   }
 
+  /*
+   * Initializes all real-time streams for the chat:
+   * - Messages stream
+   * - Typing indicators stream
+   * - Unread count stream
+   */
   Future<void> initializeChat() async {
     await _bindMessagesStream();
     await _bindTypingStream();
     await _bindUnreadCountStream();
-    await _bindUnreadCountStream();
-    // await _markAllMessagesAsRead(); // Let VisibilityDetector handle it
   }
 
+  //* ===========================================================================
+  //* USER INFO LOADING
+  //* ===========================================================================
+  /*
+   * Loads recipient user information from auth service
+   */
   Future<void> _loadUserInfo() async {
     try {
       final result = await authUsecase.getUser(contact.id);
@@ -71,29 +129,39 @@ class ChatController extends GetxController {
     }
   }
 
+  //* ===========================================================================
+  //* MESSAGES STREAM MANAGEMENT
+  //* ===========================================================================
+  /*
+   * Binds to real-time messages stream from Firestore
+   */
+  /*
+   * Binds to real-time messages stream from Firestore
+   */
   Future<void> _bindMessagesStream() async {
-    isLoading.value = true;
-
+    if (messages.isEmpty) isLoading.value = true;
     _messagesSubscription?.cancel();
     _messagesSubscription = chatsRepository
-        .getMessagesStream(chatId)
+        .getMessagesStream(chatId, limit: messageLimit.value)
         .listen(_onMessagesUpdated, onError: _onMessagesError);
   }
 
+  /*
+   * Handles incoming messages from stream
+   * - Sorts by timestamp
+   * - Updates UI
+   * - Auto-scrolls to bottom
+   */
   void _onMessagesUpdated(List<ChatsEntity> newMessages) {
-    // Sort messages by timestamp (oldest first)
     newMessages.sort((a, b) => a.timestamp.compareTo(b.timestamp));
-
     bool isInitialLoad = isLoading.value;
+
     messages.assignAll(newMessages);
     isLoading.value = false;
+    isLoadingMore.value = false;
     errorMessage.value = '';
 
-    // Mark new messages as read
-    // Mark new messages as read
-    // _autoMarkNewMessagesAsRead(); // Let VisibilityDetector handle it
-
-    // Auto-scroll to bottom
+    //* Auto-scroll to bottom
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (isInitialLoad) {
         if (scrollController.hasClients) {
@@ -110,6 +178,12 @@ class ChatController extends GetxController {
     isLoading.value = false;
   }
 
+  //* ===========================================================================
+  //* TYPING INDICATOR
+  //* ===========================================================================
+  /*
+   * Binds to real-time typing users stream
+   */
   Future<void> _bindTypingStream() async {
     _typingSubscription?.cancel();
     _typingSubscription = chatsRepository.getTypingUsersStream(chatId).listen((
@@ -119,24 +193,14 @@ class ChatController extends GetxController {
     });
   }
 
-  Future<void> _bindUnreadCountStream() async {
-    final currentUserId = authUsecase.currentUid;
-    if (currentUserId != null) {
-      _unreadCountSubscription?.cancel();
-      _unreadCountSubscription = chatsRepository
-          .getUnreadCountStream(chatId, currentUserId)
-          .listen((count) {
-            // Update UI if needed
-          });
-    }
-  }
-
+  /*
+   * Handles text input changes for typing indicator
+   */
   final RxBool hasText = false.obs;
-
   void onTextChanged(String value) {
     hasText.value = value.trim().isNotEmpty;
 
-    // Send typing indicator
+    //* Manage typing timer
     if (_typingTimer?.isActive ?? false) {
       _typingTimer?.cancel();
     }
@@ -151,6 +215,9 @@ class ChatController extends GetxController {
     }
   }
 
+  /*
+   * Sends typing status to other user via repository
+   */
   void _sendTypingStatus(bool isTyping) {
     final currentUserId = authUsecase.currentUid;
     if (currentUserId != null) {
@@ -159,6 +226,21 @@ class ChatController extends GetxController {
         userId: currentUserId,
         isTyping: isTyping,
       );
+    }
+  }
+
+  //* ===========================================================================
+  //* READ RECEIPTS
+  //* ===========================================================================
+  Future<void> _bindUnreadCountStream() async {
+    final currentUserId = authUsecase.currentUid;
+    if (currentUserId != null) {
+      _unreadCountSubscription?.cancel();
+      _unreadCountSubscription = chatsRepository
+          .getUnreadCountStream(chatId, currentUserId)
+          .listen((count) {
+            //* Update UI if needed
+          });
     }
   }
 
@@ -183,11 +265,21 @@ class ChatController extends GetxController {
     );
   }
 
+  //* ===========================================================================
+  //* TEXT MESSAGING
+  //* ===========================================================================
+  /*
+   * Sends text message with optimistic UI update
+   */
+  final Rx<String?> editingMessageId = Rx<String?>(null);
+  final Rx<ChatsEntity?> replyMessage = Rx<ChatsEntity?>(null);
+
   Future<void> sendMessage() async {
     if (editingMessageId.value != null) {
       await editMessage();
       return;
     }
+
     final text = messageController.text.trim();
     if (text.isEmpty) return;
     messageController.clear();
@@ -201,7 +293,6 @@ class ChatController extends GetxController {
     }
 
     final messageId = DateTime.now().millisecondsSinceEpoch.toString();
-
     final replyTo = replyMessage.value;
 
     final message = ChatsEntity(
@@ -224,31 +315,26 @@ class ChatController extends GetxController {
       replyToType: replyTo?.type,
     );
 
-    // Clear reply state
     cancelReply();
-
-    // Optimistic update
     messages.add(message);
-    // Scroll to bottom after frame
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       scrollToBottom();
     });
 
     final result = await chatsRepository.sendMessage(message);
-    result.fold(
-      (failure) {
-        messages.remove(message);
-        errorMessage.value = 'Failed to send message';
-        Get.snackbar('Error', 'Failed to send message');
-      },
-      (_) {
-        messageFocusNode.requestFocus();
-      },
-    );
+    result.fold((failure) {
+      messages.remove(message);
+      errorMessage.value = 'Failed to send message';
+    }, (_) => messageFocusNode.requestFocus());
   }
 
-  final Rx<String?> editingMessageId = Rx<String?>(null);
-
+  //* ===========================================================================
+  //* MESSAGE EDITING
+  //* ===========================================================================
+  /*
+   * Starts editing existing message
+   */
   void startEditing(ChatsEntity message) {
     editingMessageId.value = message.id;
     messageController.text = message.text;
@@ -261,17 +347,9 @@ class ChatController extends GetxController {
     messageFocusNode.unfocus();
   }
 
-  final Rx<ChatsEntity?> replyMessage = Rx<ChatsEntity?>(null);
-
-  void replyToMessage(ChatsEntity message) {
-    replyMessage.value = message;
-    messageFocusNode.requestFocus();
-  }
-
-  void cancelReply() {
-    replyMessage.value = null;
-  }
-
+  /*
+   * Edits message with optimistic UI update
+   */
   Future<void> editMessage() async {
     final messageId = editingMessageId.value;
     if (messageId == null) return;
@@ -279,12 +357,9 @@ class ChatController extends GetxController {
     final text = messageController.text.trim();
     if (text.isEmpty) return;
 
-    // Optimistic update
     final index = messages.indexWhere((m) => m.id == messageId);
     if (index != -1) {
       final oldMessage = messages[index];
-
-      // If text hasn't changed, just cancel editing
       if (oldMessage.text == text) {
         cancelEditing();
         return;
@@ -318,16 +393,29 @@ class ChatController extends GetxController {
 
     result.fold((failure) {
       errorMessage.value = 'Failed to edit message';
-      Get.snackbar('Error', 'Failed to edit message');
-      // Revert optimistic update if needed, or just let stream refresh handle it
-    }, (_) => null);
+    }, (_) {});
   }
 
-  // selected chat
-  // ------------------------------------------------------
+  //* ===========================================================================
+  //* MESSAGE REPLY
+  //* ===========================================================================
+  void replyToMessage(ChatsEntity message) {
+    replyMessage.value = message;
+    messageFocusNode.requestFocus();
+  }
 
+  void cancelReply() {
+    replyMessage.value = null;
+  }
+
+  //* ===========================================================================
+  //* MESSAGE SELECTION MODE
+  //* ===========================================================================
   final RxList<String> selectedMessages = <String>[].obs;
 
+  /*
+   * Toggle message selection for bulk operations
+   */
   void toggleMessageSelection(String messageId) {
     if (selectedMessages.contains(messageId)) {
       selectedMessages.remove(messageId);
@@ -341,22 +429,156 @@ class ChatController extends GetxController {
   }
 
   void deleteSelectedMessages() {
-    Get.snackbar('Delete', 'Deleted ${selectedMessages.length} messages');
     clearSelection();
   }
 
+  /*
+   * Copy selected messages to clipboard
+   */
   void copySelectedMessages() {
     final selectedText = messages
         .where((m) => selectedMessages.contains(m.id))
         .map((m) => m.text)
         .join('\n');
     Clipboard.setData(ClipboardData(text: selectedText));
-    Get.snackbar('Copy', 'Copied to clipboard');
     clearSelection();
   }
 
-  // ------------------------------------------------------
+  //* ===========================================================================
+  //* MEDIA MESSAGING
+  //* ===========================================================================
+  /*
+   * Media picker methods
+   */
+  Future<Map<String, dynamic>?> takePhoto() async {
+    final file = await MediaPicker.instance.pickImageFromCamera();
+    if (file != null) {
+      return {'file': file, 'type': MessageType.image};
+    }
+    return null;
+  }
 
+  Future<Map<String, dynamic>?> pickImageFromGallery() async {
+    final file = await MediaPicker.instance.pickImageFromGallery();
+    if (file != null) {
+      log.d(file.path);
+      return {'file': file, 'type': MessageType.image};
+    }
+    return null;
+  }
+
+  Future<Map<String, dynamic>?> pickDocument() async {
+    final file = await MediaPicker.instance.pickDocument();
+    if (file != null) {
+      return {'file': file, 'type': MessageType.document};
+    }
+    return null;
+  }
+
+  Future<Map<String, dynamic>?> pickVideoFromGallery() async {
+    final file = await MediaPicker.instance.pickVideoFromGallery();
+    if (file != null) {
+      log.d(file.path);
+      return {'file': file, 'type': MessageType.video};
+    }
+    return null;
+  }
+
+  Future<Map<String, dynamic>?> pickVideoFromCamera() async {
+    final file = await MediaPicker.instance.pickVideoFromCamera();
+    if (file != null) {
+      log.d(file.path);
+      return {'file': file, 'type': MessageType.video};
+    }
+    return null;
+  }
+
+  /*
+   * Sends media message (image/document) with Cloudinary upload
+   */
+  Future<void> sendMediaMessage(
+    File file,
+    String caption,
+    MessageType type,
+  ) async {
+    await _sendMediaMessage(file, caption, type);
+  }
+
+  Future<void> _sendMediaMessage(
+    File file,
+    String caption,
+    MessageType type,
+  ) async {
+    final currentUserId = authUsecase.currentUid;
+    final currentUser = fs.currentUser;
+
+    if (currentUserId == null || currentUser == null) {
+      errorMessage.value = 'User not authenticated';
+      return;
+    }
+
+    try {
+      log.d("Uploading media...");
+      final mediaUrl = await CloudinaryUtils.uploadFile(
+        file: file,
+        isVideo: type == MessageType.video,
+      );
+      if (mediaUrl == null) return;
+      log.d(mediaUrl);
+      log.d("Media uploaded successfully");
+
+      log.d("Sending message...");
+      final messageId = DateTime.now().millisecondsSinceEpoch.toString();
+      final replyTo = replyMessage.value;
+
+      final message = ChatsEntity(
+        id: messageId,
+        chatId: chatId,
+        senderId: currentUserId,
+        receiverId: contact.id,
+        senderName: authStateNotifier.user?.displayName ?? 'Unknown',
+        senderPhotoUrl:
+            authStateNotifier.user?.photoUrl ?? currentUser.photoURL,
+        receiverName: contact.name,
+        text: caption,
+        type: type,
+        timestamp: DateTime.now(),
+        isRead: false,
+        readBy: const [],
+        status: MessageStatus.sending,
+        replyToMessageId: replyTo?.id,
+        replyToSenderName: replyTo?.senderName,
+        replyToText: replyTo?.text,
+        replyToType: replyTo?.type,
+        mediaUrl: mediaUrl,
+        mediaSize: await file.length(),
+      );
+
+      cancelReply();
+      messages.add(message);
+
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        scrollToBottom();
+      });
+
+      final result = await chatsRepository.sendMessage(message);
+      result.fold(
+        (failure) {
+          messages.remove(message);
+          errorMessage.value = 'Failed to send message';
+        },
+        (_) {
+          log.d("Message sent successfully");
+        },
+      );
+    } catch (e) {
+      log.e(e);
+    }
+  }
+
+  //* ===========================================================================
+  //* UTILITY METHODS
+  //* ===========================================================================
   Future<void> refreshMessages() async {
     await _bindMessagesStream();
   }
@@ -365,67 +587,7 @@ class ChatController extends GetxController {
     await _bindMessagesStream();
   }
 
-  void searchMessages(String query) {
-    // isme chat search ki functionality add karni hai
-  }
-
-  void takePhoto() async {
-    // isme camera ki functionality add karni hai
-  }
-
-  void pickImageFromGallery() async {
-    // isme gallery ki functionality add karni hai
-  }
-
-  void pickDocument() async {
-    // isme document ki functionality add karni hai
-  }
-
-  void shareLocation() async {
-    // isme location ki functionality add karni hai
-  }
-
-  void blockUser() async {
-    // isme block user ki functionality add karni hai
-  }
-
-  void toggleMuteNotifications() {
-    isMuted.value = !isMuted.value;
-    // Save to preferences
-  }
-
-  void clearChat() async {
-    // Implement clear chat functionality
-  }
-
-  void onChatPaused() {
-    _typingTimer?.cancel();
-    _sendTypingStatus(false);
-  }
-
-  @override
-  void onClose() {
-    onChatPaused();
-    // markAllMessagesAsRead(); // Can fail if auth state is flaky on close? But OK.
-
-    _messagesSubscription?.cancel();
-    _typingSubscription?.cancel();
-    _unreadCountSubscription?.cancel();
-
-    messageController.dispose();
-
-    messageFocusNode.dispose();
-    scrollController.dispose();
-    super.onClose();
-  }
-
-  String _generateChatId() {
-    final currentUserId = Get.find<AuthUsecase>().currentUid;
-    if (currentUserId == null) return '';
-
-    final sortedIds = [currentUserId, contact.id]..sort();
-    return 'chat_${sortedIds[0]}_${sortedIds[1]}';
-  }
+  void searchMessages(String query) {}
 
   void scrollToBottom() {
     if (scrollController.hasClients) {
@@ -435,5 +597,167 @@ class ChatController extends GetxController {
         curve: Curves.easeOut,
       );
     }
+  }
+
+  void _setupScrollListener() {
+    scrollController.addListener(() {
+      if (scrollController.hasClients) {
+        // Check if scrolled to top (older messages)
+        if (scrollController.position.pixels <= 100 && !isLoadingMore.value) {
+          _loadMoreMessages();
+        }
+      }
+    });
+  }
+
+  void _loadMoreMessages() {
+    // Check if we have more messages to load by comparing current count with limit
+    // Note: This is an estimation. If we have fewer messages than limit, we reached end.
+    if (messages.length < messageLimit.value) return;
+
+    isLoadingMore.value = true;
+    messageLimit.value += 20;
+    _bindMessagesStream();
+  }
+
+  /*
+   * Generates deterministic chat ID from sorted user IDs
+   */
+  String _generateChatId() {
+    final currentUserId = Get.find<AuthUsecase>().currentUid;
+    if (currentUserId == null) return '';
+
+    final sortedIds = [currentUserId, contact.id]..sort();
+    return 'chat_${sortedIds[0]}_${sortedIds[1]}';
+  }
+
+  //* ===========================================================================
+  //* CHAT MANAGEMENT
+  //* ===========================================================================
+  void toggleMuteNotifications() {
+    isMuted.value = !isMuted.value;
+  }
+
+  void blockUser() async {}
+
+  void clearChat() async {}
+
+  /*
+   * Shares current location as a Google Maps link
+   */
+  Future<void> shareLocation() async {
+    final hasPermission = await _handleLocationPermission();
+    if (!hasPermission) return;
+
+    try {
+      final position = await Geolocator.getCurrentPosition();
+      final locationUrl =
+          'https://www.google.com/maps/search/?api=1&query=${position.latitude},${position.longitude}';
+
+      final currentUserId = authUsecase.currentUid;
+      final currentUser = fs.currentUser;
+
+      if (currentUserId == null || currentUser == null) {
+        errorMessage.value = 'User not authenticated';
+        return;
+      }
+
+      final messageId = DateTime.now().millisecondsSinceEpoch.toString();
+      final replyTo = replyMessage.value;
+
+      final message = ChatsEntity(
+        id: messageId,
+        chatId: chatId,
+        senderId: currentUserId,
+        receiverId: contact.id,
+        senderName: authStateNotifier.user?.displayName ?? 'Unknown',
+        senderPhotoUrl:
+            authStateNotifier.user?.photoUrl ?? currentUser.photoURL,
+        receiverName: contact.name,
+        text: locationUrl,
+        type: MessageType.location,
+        timestamp: DateTime.now(),
+        isRead: false,
+        readBy: const [],
+        status: MessageStatus.sending,
+        replyToMessageId: replyTo?.id,
+        replyToSenderName: replyTo?.senderName,
+        replyToText: replyTo?.text,
+        replyToType: replyTo?.type,
+      );
+
+      // Clear reply state
+      cancelReply();
+
+      // Optimistic update
+      messages.add(message);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        scrollToBottom();
+      });
+
+      final result = await chatsRepository.sendMessage(message);
+      result.fold(
+        (failure) {
+          messages.remove(message);
+          errorMessage.value = 'Failed to send location';
+        },
+        (_) {
+          // Success
+        },
+      );
+    } catch (e) {
+      errorMessage.value = 'Error getting location: $e';
+    }
+  }
+
+  Future<bool> _handleLocationPermission() async {
+    bool serviceEnabled;
+    LocationPermission permission;
+
+    serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      errorMessage.value = 'Location services are disabled.';
+      return false;
+    }
+
+    permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) {
+        errorMessage.value = 'Location permissions are denied';
+        return false;
+      }
+    }
+
+    if (permission == LocationPermission.deniedForever) {
+      errorMessage.value =
+          'Location permissions are permanently denied, we cannot request permissions.';
+      return false;
+    }
+
+    return true;
+  }
+
+  //* ===========================================================================
+  //* LIFECYCLE CLEANUP
+  //* ===========================================================================
+
+  void onChatPaused() {
+    _typingTimer?.cancel();
+    _sendTypingStatus(false);
+  }
+
+  @override
+  void onClose() {
+    onChatPaused();
+
+    _messagesSubscription?.cancel();
+    _typingSubscription?.cancel();
+    _unreadCountSubscription?.cancel();
+
+    messageController.dispose();
+    messageFocusNode.dispose();
+    scrollController.dispose();
+    super.onClose();
   }
 }

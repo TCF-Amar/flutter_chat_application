@@ -5,7 +5,7 @@ import 'package:chat_kare/features/chat/domain/entities/chats_entity.dart';
 abstract class ChatsRepository {
   Future<Result<void>> sendMessage(ChatsEntity message);
 
-  Stream<List<ChatsEntity>> getMessagesStream(String chatId);
+  Stream<List<ChatsEntity>> getMessagesStream(String chatId, {int limit = 20});
 
   Stream<List<String>> getTypingUsersStream(String chatId);
 
