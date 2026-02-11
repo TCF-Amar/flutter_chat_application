@@ -34,4 +34,15 @@ abstract class ChatsRepository {
   });
 
   Stream<List<ChatMetaData>> getChatsStream(String userId);
+
+  Future<Result<void>> deleteMessageForMe({
+    required String chatId,
+    required String messageId,
+    required String userId,
+  });
+
+  Future<Result<void>> deleteMessageForEveryone({
+    required String chatId,
+    required String messageId,
+  });
 }

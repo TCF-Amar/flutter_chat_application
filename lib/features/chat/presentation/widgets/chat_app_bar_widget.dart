@@ -659,16 +659,26 @@ class _ChatAppBarWidgetState extends State<ChatAppBarWidget> {
   }
 
   void _showDeleteConfirmation() {
+    final selectedIds = widget.controller.selectedMessages;
+    final messages = widget.controller.messages
+        .where((m) => selectedIds.contains(m.id))
+        .toList();
+
+    // Check if all selected messages are sent by me
+    final isAllMe = messages.every(
+      (m) => m.senderId == widget.controller.authUsecase.currentUid,
+    );
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: context.colorScheme.surface,
         title: Text(
-          'Delete Messages',
+          'Delete ${messages.length} Message${messages.length == 1 ? "" : "s"}?',
           style: TextStyle(color: context.colorScheme.textPrimary),
         ),
         content: Text(
-          'Are you sure you want to delete ${widget.controller.selectedMessages.length} messages?',
+          'Are you sure you want to delete these messages?',
           style: TextStyle(color: context.colorScheme.textSecondary),
         ),
         actions: [
@@ -679,16 +689,26 @@ class _ChatAppBarWidgetState extends State<ChatAppBarWidget> {
               style: TextStyle(color: context.colorScheme.textSecondary),
             ),
           ),
-          ElevatedButton(
+          if (isAllMe)
+            TextButton(
+              onPressed: () {
+                context.pop();
+                widget.controller.deleteSelectedMessagesForEveryone();
+              },
+              child: const Text(
+                'Delete for Everyone',
+                style: TextStyle(color: Colors.red),
+              ),
+            ),
+          TextButton(
             onPressed: () {
               context.pop();
-              widget.controller.deleteSelectedMessages();
+              widget.controller.deleteSelectedMessagesForMe();
             },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: context.colorScheme.error,
-              foregroundColor: Colors.white,
+            child: const Text(
+              'Delete for Me',
+              style: TextStyle(color: Colors.red),
             ),
-            child: const Text('Delete'),
           ),
         ],
       ),

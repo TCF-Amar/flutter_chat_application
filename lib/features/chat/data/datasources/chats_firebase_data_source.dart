@@ -34,7 +34,6 @@ class ChatsRemoteDataSourceImpl {
     //   title: message.senderName,
     //   body: message.text,
     // );
-   
 
     // Update Chat Metadata for Sender
     final senderChatRef = fs.firestore
@@ -194,5 +193,40 @@ class ChatsRemoteDataSourceImpl {
         .collection('messages')
         .doc(messageId)
         .update({'text': text, 'isEdited': true});
+  }
+
+  // delete message for me
+  Future<void> deleteMessageForMe({
+    required String chatId,
+    required String messageId,
+    required String userId,
+  }) async {
+    await fs.firestore
+        .collection('chats')
+        .doc(chatId)
+        .collection('messages')
+        .doc(messageId)
+        .update({
+          'deletedBy': FieldValue.arrayUnion([userId]),
+        });
+  }
+
+  // delete message for everyone
+  Future<void> deleteMessageForEveryone({
+    required String chatId,
+    required String messageId,
+  }) async {
+    await fs.firestore
+        .collection('chats')
+        .doc(chatId)
+        .collection('messages')
+        .doc(messageId)
+        .update({
+          'isDeletedForEveryone': true,
+          'text': '',
+          'mediaUrl': null,
+          'replyToText': null,
+          'replyToMediaUrl': null,
+        });
   }
 }

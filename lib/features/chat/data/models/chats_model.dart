@@ -25,6 +25,8 @@ class ChatsModel extends ChatsEntity {
     super.replyToText,
     super.replyToType,
     super.replyToMediaUrl,
+    super.deletedBy,
+    super.isDeletedForEveryone,
   });
 
   factory ChatsModel.fromJson(Map<String, dynamic> json) {
@@ -52,6 +54,8 @@ class ChatsModel extends ChatsEntity {
           ? MessageType.values.firstWhere((e) => e.name == json["replyToType"])
           : null,
       replyToMediaUrl: json["replyToMediaUrl"],
+      deletedBy: List<String>.from(json["deletedBy"] ?? []),
+      isDeletedForEveryone: json["isDeletedForEveryone"] ?? false,
     );
   }
 
@@ -77,6 +81,8 @@ class ChatsModel extends ChatsEntity {
       "replyToText": replyToText,
       "replyToType": replyToType?.name,
       "replyToMediaUrl": replyToMediaUrl,
+      "deletedBy": deletedBy,
+      "isDeletedForEveryone": isDeletedForEveryone,
     };
   }
 
@@ -103,6 +109,8 @@ class ChatsModel extends ChatsEntity {
       replyToText: replyToText,
       replyToType: replyToType,
       replyToMediaUrl: replyToMediaUrl,
+      deletedBy: deletedBy,
+      isDeletedForEveryone: isDeletedForEveryone,
     );
   }
 
@@ -130,6 +138,8 @@ class ChatsModel extends ChatsEntity {
       replyToText: entity.replyToText,
       replyToType: entity.replyToType,
       replyToMediaUrl: entity.replyToMediaUrl,
+      deletedBy: entity.deletedBy,
+      isDeletedForEveryone: entity.isDeletedForEveryone,
     );
   }
 }

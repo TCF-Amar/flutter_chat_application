@@ -155,6 +155,10 @@ class ChatController extends GetxController {
    * - Auto-scrolls to bottom
    */
   void _onMessagesUpdated(List<ChatsEntity> newMessages) {
+    final currentUserId = authUsecase.currentUid;
+    if (currentUserId != null) {
+      newMessages.removeWhere((m) => m.deletedBy.contains(currentUserId));
+    }
     newMessages.sort((a, b) => a.timestamp.compareTo(b.timestamp));
     bool isInitialLoad = isLoading.value;
     bool wasLoadingMore = isLoadingMore.value;
@@ -432,8 +436,81 @@ class ChatController extends GetxController {
     selectedMessages.clear();
   }
 
-  void deleteSelectedMessages() {
+  void deleteSelectedMessagesForMe() {
+    final selectedIds = List<String>.from(selectedMessages);
+    for (final id in selectedIds) {
+      final message = messages.firstWhereOrNull((m) => m.id == id);
+      if (message != null) {
+        deleteMessageForMe(message);
+      }
+    }
     clearSelection();
+  }
+
+  void deleteSelectedMessagesForEveryone() {
+    final selectedIds = List<String>.from(selectedMessages);
+    for (final id in selectedIds) {
+      final message = messages.firstWhereOrNull((m) => m.id == id);
+      if (message != null) {
+        deleteMessageForEveryone(message);
+      }
+    }
+    clearSelection();
+  }
+
+  Future<void> deleteMessageForMe(ChatsEntity message) async {
+    final currentUserId = authUsecase.currentUid;
+    if (currentUserId == null) return;
+
+    // Optimistic update
+    messages.removeWhere((m) => m.id == message.id);
+
+    final result = await chatsRepository.deleteMessageForMe(
+      chatId: chatId,
+      messageId: message.id,
+      userId: currentUserId,
+    );
+
+    result.fold((failure) {
+      // Revert optimistic update if failed
+      // For simplicity, we might just reload messages or show error
+      errorMessage.value = 'Failed to delete message for me';
+      _bindMessagesStream();
+    }, (_) {});
+  }
+
+  Future<void> deleteMessageForEveryone(ChatsEntity message) async {
+    // Optimistic update
+    final index = messages.indexWhere((m) => m.id == message.id);
+    if (index != -1) {
+      messages[index] = ChatsEntity(
+        id: message.id,
+        chatId: message.chatId,
+        senderId: message.senderId,
+        receiverId: message.receiverId,
+        senderName: message.senderName,
+        receiverName: message.receiverName,
+        senderPhotoUrl: message.senderPhotoUrl,
+        text: '',
+        type: message.type,
+        timestamp: message.timestamp,
+        isRead: message.isRead,
+        readBy: message.readBy,
+        status: message.status,
+        isEdited: message.isEdited,
+        isDeletedForEveryone: true,
+      );
+    }
+
+    final result = await chatsRepository.deleteMessageForEveryone(
+      chatId: chatId,
+      messageId: message.id,
+    );
+
+    result.fold((failure) {
+      errorMessage.value = 'Failed to delete message for everyone';
+      _bindMessagesStream();
+    }, (_) {});
   }
 
   /*

@@ -54,4 +54,3 @@ flutter:
   uses-material-design: true
   assets:
     - assets/icons/
-    - assets/service_account.json

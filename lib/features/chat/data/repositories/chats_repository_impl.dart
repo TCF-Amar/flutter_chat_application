@@ -110,4 +110,38 @@ class ChatsRepositoryImpl implements ChatsRepository {
   Stream<List<ChatMetaData>> getChatsStream(String userId) {
     return chatFirebaseDataSource.getChatsStream(userId);
   }
+
+  @override
+  Future<Result<void>> deleteMessageForMe({
+    required String chatId,
+    required String messageId,
+    required String userId,
+  }) async {
+    try {
+      await chatFirebaseDataSource.deleteMessageForMe(
+        chatId: chatId,
+        messageId: messageId,
+        userId: userId,
+      );
+      return Right(null);
+    } on FirebaseException catch (e) {
+      return Left(mapExceptionToFailure(e));
+    }
+  }
+
+  @override
+  Future<Result<void>> deleteMessageForEveryone({
+    required String chatId,
+    required String messageId,
+  }) async {
+    try {
+      await chatFirebaseDataSource.deleteMessageForEveryone(
+        chatId: chatId,
+        messageId: messageId,
+      );
+      return Right(null);
+    } on FirebaseException catch (e) {
+      return Left(mapExceptionToFailure(e));
+    }
+  }
 }

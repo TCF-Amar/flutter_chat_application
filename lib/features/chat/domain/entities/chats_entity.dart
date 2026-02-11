@@ -43,7 +43,12 @@ class ChatsEntity {
     this.replyToText,
     this.replyToType,
     this.replyToMediaUrl,
+    this.deletedBy = const [],
+    this.isDeletedForEveryone = false,
   });
+
+  final List<String> deletedBy;
+  final bool isDeletedForEveryone;
 }
 
 enum MessageType { text, image, video, audio, document, location }

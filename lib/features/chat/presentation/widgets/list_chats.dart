@@ -51,10 +51,10 @@ class ListChats extends StatelessWidget {
 
           // Define border radius based on grouping
           final BorderRadius borderRadius = BorderRadius.only(
-            topLeft: Radius.circular(!isMe && !isFirstInGroup ? 4 : 16),
-            topRight: Radius.circular(isMe && !isFirstInGroup ? 4 : 16),
-            bottomLeft: Radius.circular(!isMe && !isLastInGroup ? 4 : 16),
-            bottomRight: Radius.circular(isMe && !isLastInGroup ? 4 : 16),
+            topLeft: Radius.circular(!isMe && !isFirstInGroup ? 0 : 10),
+            topRight: Radius.circular(isMe && !isFirstInGroup ? 0 : 10),
+            bottomLeft: Radius.circular(!isMe && !isLastInGroup ? 0 : 10),
+            bottomRight: Radius.circular(isMe && !isLastInGroup ? 0 : 10),
           );
 
           return AutoScrollTag(
@@ -342,6 +342,31 @@ class ListChats extends StatelessWidget {
             ),
           ],
         ],
+      );
+    }
+
+    // Handle deleted messages
+    if (message.isDeletedForEveryone) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        child: Wrap(
+          alignment: WrapAlignment.end,
+          crossAxisAlignment: WrapCrossAlignment.end,
+          spacing: 6,
+          runSpacing: 2,
+          children: [
+            AppText(
+              "This message was deleted",
+              fontSize: 14,
+              fontStyle: FontStyle.italic,
+              color: isMe ? Colors.white70 : Colors.grey[600],
+            ),
+            Padding(
+              padding: const EdgeInsets.only(bottom: 0),
+              child: buildTimestamp(),
+            ),
+          ],
+        ),
       );
     }
 
