@@ -1,15 +1,16 @@
 import 'package:chat_kare/core/services/auth_state_notifier.dart';
+import 'package:chat_kare/features/auth/domain/entities/user_entity.dart';
 import 'package:chat_kare/features/chat/presentation/controllers/chat_controller.dart';
 import 'package:chat_kare/features/chat/presentation/widgets/chat_app_bar_widget.dart';
 import 'package:chat_kare/features/chat/presentation/widgets/chat_input_widget.dart';
 import 'package:chat_kare/features/chat/presentation/widgets/chat_messages_widget.dart';
-import 'package:chat_kare/features/contacts/domain/entities/contacts_entity.dart';
+import 'package:chat_kare/features/contacts/presentation/controllers/contacts_controller.dart';
 import 'package:chat_kare/features/shared/widgets/index.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 class ChatPage extends StatefulWidget {
-  final ContactsEntity contact;
+  final UserEntity contact;
   const ChatPage({super.key, required this.contact});
 
   @override
@@ -20,6 +21,18 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
   late ChatController _controller;
   final String _controllerTag = 'chat_${DateTime.now().millisecondsSinceEpoch}';
 
+  //* Get contact from ContactsController for latest data (custom names, etc.)
+  UserEntity get _contact {
+    try {
+      final contactsController = Get.find<ContactsController>();
+      return contactsController.getContactByUid(widget.contact.uid) ??
+          widget.contact;
+    } catch (e) {
+      // Fallback to widget.contact if ContactsController not available
+      return widget.contact;
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -28,7 +41,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     // Create a unique controller for this chat page
     _controller = Get.put(
       ChatController(
-        contact: widget.contact,
+        contact: _contact,
         authStateNotifier: Get.find<AuthStateNotifier>(),
       ),
       tag: _controllerTag,
@@ -75,10 +88,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
   @override
   Widget build(BuildContext context) {
     return AppScaffold(
-      appBar: ChatAppBarWidget(
-        controller: _controller,
-        contact: widget.contact,
-      ),
+      appBar: ChatAppBarWidget(controller: _controller, contact: _contact),
       body: GestureDetector(
         onTap: () {
           FocusScope.of(context).unfocus();
@@ -90,7 +100,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
               Expanded(
                 child: ChatMessagesWidget(
                   controller: _controller,
-                  contact: widget.contact,
+                  contact: _contact,
                 ),
               ),
               ChatInputWidget(controller: _controller),

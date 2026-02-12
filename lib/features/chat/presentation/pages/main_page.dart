@@ -1,3 +1,4 @@
+import 'package:chat_kare/core/routes/app_routes.dart';
 import 'package:chat_kare/features/auth/presentation/controllers/auth_controller.dart';
 import 'package:chat_kare/core/theme/theme_extensions.dart';
 import 'package:chat_kare/features/chat/presentation/widgets/story_circle.dart';
@@ -10,8 +11,8 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:go_router/go_router.dart';
 
-class ChatsPage extends StatelessWidget {
-  const ChatsPage({super.key});
+class MainPage extends StatelessWidget {
+  const MainPage({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -24,26 +25,31 @@ class ChatsPage extends StatelessWidget {
         actions: [
           PopupMenuButton<String>(
             onSelected: (value) {
-              showDialog(
-                context: context,
-                builder: (context) => AlertDialog(
-                  title: const Text("Logout"),
-                  content: const Text("Are you sure you want to logout?"),
-                  actions: [
-                    TextButton(
-                      onPressed: () => context.pop(),
-                      child: const Text("Cancel"),
-                    ),
-                    TextButton(
-                      onPressed: () => Get.find<AuthController>().signOut(),
-                      child: const Text("Logout"),
-                    ),
-                  ],
-                ),
-              );
+              if (value == 'logout') {
+                showDialog(
+                  context: context,
+                  builder: (context) => AlertDialog(
+                    title: const Text("Logout"),
+                    content: const Text("Are you sure you want to logout?"),
+                    actions: [
+                      TextButton(
+                        onPressed: () => context.pop(),
+                        child: const Text("Cancel"),
+                      ),
+                      TextButton(
+                        onPressed: () => Get.find<AuthController>().signOut(),
+                        child: const Text("Logout"),
+                      ),
+                    ],
+                  ),
+                );
+              } else if (value == 'profile') {
+                context.pushNamed(AppRoutes.profile.name);
+              }
             },
             itemBuilder: (BuildContext context) {
               return [
+                const PopupMenuItem(value: 'profile', child: Text('Profile')),
                 const PopupMenuItem(
                   value: 'new_group',
                   child: Text('New Group'),

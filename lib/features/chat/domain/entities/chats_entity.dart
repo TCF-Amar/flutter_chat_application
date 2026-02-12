@@ -6,6 +6,7 @@ class ChatsEntity {
   final String senderName;
   final String receiverName;
   final String? senderPhotoUrl;
+  final String? receiverPhotoUrl;
   final String text;
   final MessageType type;
   final DateTime timestamp;
@@ -29,6 +30,7 @@ class ChatsEntity {
     required this.senderName,
     required this.receiverName,
     this.senderPhotoUrl,
+    this.receiverPhotoUrl,
     required this.text,
     this.type = MessageType.text,
     required this.timestamp,
@@ -61,6 +63,8 @@ class ChatMetadataEntity {
   final String? lastMessage;
   final DateTime? lastMessageTime;
   final String? lastMessageSenderId;
+  final String? lastMessageSenderName;
+  final String? lastMessageSenderPhotoUrl;
   final int unreadCount;
   final DateTime createdAt;
   final ChatType type;
@@ -72,6 +76,8 @@ class ChatMetadataEntity {
     this.lastMessage,
     this.lastMessageTime,
     this.lastMessageSenderId,
+    this.lastMessageSenderName,
+    this.lastMessageSenderPhotoUrl,
     this.unreadCount = 0,
     required this.createdAt,
     this.type = ChatType.direct,

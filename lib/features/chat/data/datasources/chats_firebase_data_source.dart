@@ -1,5 +1,4 @@
 import 'package:chat_kare/core/services/firebase_services.dart';
-import 'package:chat_kare/core/services/notification_services.dart';
 import 'package:chat_kare/features/chat/data/models/chats_model.dart';
 import 'package:chat_kare/features/chat/data/models/chat_meta_data.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -46,8 +45,14 @@ class ChatsRemoteDataSourceImpl {
       'chatId': message.chatId,
       'receiverId': message.receiverId,
       'receiverName': message.receiverName,
+      'receiverPhotoUrl': message.receiverPhotoUrl,
       'lastMessage': message.text,
       'lastMessageTime': message.timestamp,
+      'lastMessageSenderId': message.senderId,
+      'lastMessageSenderName': message.senderName,
+      'lastMessageSenderPhotoUrl': message.senderPhotoUrl,
+      'isRead': true,
+      'readBy': [message.senderId],
       'unreadCount': 0, // Sender has read their own message
     }, SetOptions(merge: true));
 
@@ -63,6 +68,9 @@ class ChatsRemoteDataSourceImpl {
       'receiverId': message.senderId,
       'receiverName': message.senderName,
       'receiverPhotoUrl': message.senderPhotoUrl,
+      'lastMessageSenderId': message.senderId,
+      'lastMessageSenderName': message.senderName,
+      'lastMessageSenderPhotoUrl': message.senderPhotoUrl,
       'lastMessage': message.text,
       'lastMessageTime': message.timestamp,
       'unreadCount': FieldValue.increment(1),

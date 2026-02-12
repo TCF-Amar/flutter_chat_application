@@ -1,13 +1,14 @@
 import 'package:chat_kare/core/routes/app_routes.dart';
 import 'package:chat_kare/core/theme/theme_extensions.dart';
-import 'package:chat_kare/features/contacts/domain/entities/contacts_entity.dart';
+import 'package:chat_kare/features/auth/domain/entities/user_entity.dart';
+import 'package:chat_kare/features/contacts/domain/entities/contact_entity.dart';
 import 'package:chat_kare/features/shared/widgets/app_snackbar.dart';
 import 'package:chat_kare/features/shared/widgets/app_text.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 class ChatTiles extends StatelessWidget {
-  final ContactsEntity contact;
+  final UserEntity contact;
   const ChatTiles({super.key, required this.contact});
 
   @override
@@ -42,7 +43,7 @@ class ChatTiles extends StatelessWidget {
           ),
         ),
       ),
-      title: AppText(contact.name, fontSize: 16, fontWeight: FontWeight.w600),
+      title: AppText(contact.displayName.toString(), fontSize: 16, fontWeight: FontWeight.w600),
       subtitle: AppText(
         contact.phoneNumber ?? "",
         fontSize: 12,

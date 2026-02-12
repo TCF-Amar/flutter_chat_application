@@ -4,7 +4,7 @@ import 'package:chat_kare/features/auth/domain/entities/user_entity.dart';
 import 'package:chat_kare/features/auth/domain/usecases/auth_usecase.dart';
 import 'package:chat_kare/features/chat/data/models/chat_meta_data.dart';
 import 'package:chat_kare/features/chat/domain/usecases/chats_usecase.dart';
-import 'package:chat_kare/features/contacts/domain/entities/contacts_entity.dart';
+import 'package:chat_kare/features/contacts/domain/entities/contact_entity.dart';
 import 'package:chat_kare/core/services/auth_state_notifier.dart';
 import 'package:get/get.dart';
 
@@ -104,16 +104,14 @@ class ChatListController extends GetxController {
         );
   }
 
-  //* ==============================================================================
-  //* HELPERS
-  //* ==============================================================================
-  //* Helper to convert ChatMetaData to ContactsEntity for navigation
-  ContactsEntity getContactFromChat(ChatMetaData chat) {
-    return ContactsEntity(
-      id: chat.receiverId,
-      name: chat.receiverName,
-      phoneNumber: null,
+  //* Helper to convert ChatMetaData to UserEntity for navigation
+  UserEntity getContactFromChat(ChatMetaData chat) {
+    return UserEntity(
+      uid: chat.receiverId,
+      email: '',
+      displayName: chat.receiverName,
       photoUrl: chat.receiverPhotoUrl,
+      isProfileCompleted: true,
     );
   }
 }

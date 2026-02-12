@@ -36,4 +36,8 @@ class AppRoutes {
     name: 'networkMediaView',
     path: '/networkMediaView',
   );
+  static final RouteModels profile = RouteModels(
+    name: 'profile',
+    path: '/profile',
+  );
 }

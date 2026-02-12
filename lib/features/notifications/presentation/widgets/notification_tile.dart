@@ -1,3 +1,4 @@
+import 'package:chat_kare/core/theme/theme_extensions.dart';
 import 'package:chat_kare/features/notifications/data/models/notifications_model.dart';
 import 'package:chat_kare/features/notifications/presentation/controllers/notifications_controller.dart';
 import 'package:chat_kare/features/notifications/presentation/widgets/dismiss_backgrounds.dart';
@@ -41,7 +42,7 @@ class NotificationTile extends StatelessWidget {
           return ListTile(
             titleAlignment: .center,
             minTileHeight: 50,
-            leading: _buildLeading(isSelected),
+            leading: _buildLeading(isSelected, context),
             title: Text(
               notification.senderName,
               style: const TextStyle(fontWeight: FontWeight.bold),
@@ -67,10 +68,12 @@ class NotificationTile extends StatelessWidget {
     );
   }
 
-  Widget _buildLeading(bool isSelected) {
+  Widget _buildLeading(bool isSelected, BuildContext context) {
     return Stack(
       children: [
         CircleAvatar(
+          radius: 24,
+          backgroundColor: context.colorScheme.primary,
           backgroundImage: notification.senderPhotoUrl.isNotEmpty
               ? NetworkImage(notification.senderPhotoUrl)
               : null,

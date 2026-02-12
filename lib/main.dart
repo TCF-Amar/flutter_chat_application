@@ -1,6 +1,7 @@
 import 'package:chat_kare/core/di/d_i.dart';
 import 'package:chat_kare/core/routes/app_router.dart';
 import 'package:chat_kare/core/services/auth_state_notifier.dart';
+import 'package:chat_kare/core/services/presence_service.dart';
 import 'package:chat_kare/core/theme/app_theme.dart';
 import 'package:chat_kare/firebase_options.dart';
 import 'package:flutter/material.dart';
@@ -22,6 +23,10 @@ void main() async {
   // Initialize router with AuthStateNotifier
   final authStateNotifier = Get.find<AuthStateNotifier>();
   AppRouter.instance.init(authStateNotifier);
+
+  // Initialize PresenceService to track online/offline status
+  PresenceService.init();
+  
 
   runApp(MainApp());
 }

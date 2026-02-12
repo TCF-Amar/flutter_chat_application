@@ -1,12 +1,12 @@
+import 'package:chat_kare/features/auth/domain/entities/user_entity.dart';
 import 'package:chat_kare/features/chat/presentation/controllers/chat_controller.dart';
 import 'package:chat_kare/features/chat/presentation/widgets/list_chats.dart';
-import 'package:chat_kare/features/contacts/domain/entities/contacts_entity.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 class ChatMessagesWidget extends StatelessWidget {
   final ChatController controller;
-  final ContactsEntity contact;
+  final UserEntity contact;
 
   const ChatMessagesWidget({
     super.key,
@@ -71,7 +71,7 @@ class ChatMessagesWidget extends StatelessWidget {
             controller: controller,
             onMessageVisible: (message) {
               // Mark message as read when it becomes visible
-              if (!message.isRead && message.senderId == contact.id) {
+              if (!message.isRead && message.senderId == contact.uid) {
                 controller.markMessageAsRead(message.id);
               }
             },

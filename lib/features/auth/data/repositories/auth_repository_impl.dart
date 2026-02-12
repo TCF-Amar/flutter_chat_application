@@ -207,6 +207,20 @@ class AuthRepositoryImpl implements AuthRepository {
     }
   }
 
+  /// Update user online/offline status
+  Future<void> updateUserStatus({
+    required String uid,
+    required String status,
+  }) async {
+    try {
+      _logger.i('Repository: Updating user status to $status');
+      await remoteDataSource.updateUserStatus(uid: uid, status: status);
+    } catch (e) {
+      _logger.e('Repository: Failed to update user status: $e');
+      // Don't throw - status updates are non-critical
+    }
+  }
+
   @override
   String? get currentUid => remoteDataSource.currentUid;
 }

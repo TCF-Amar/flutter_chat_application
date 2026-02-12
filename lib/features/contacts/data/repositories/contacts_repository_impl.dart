@@ -5,7 +5,7 @@ import 'package:chat_kare/features/auth/domain/entities/user_entity.dart';
 import 'package:chat_kare/features/contacts/data/datasources/contacts_remote_data_source.dart';
 import 'package:chat_kare/features/contacts/data/models/contacts_model.dart';
 import 'package:chat_kare/features/auth/data/models/user_model.dart';
-import 'package:chat_kare/features/contacts/domain/entities/contacts_entity.dart';
+import 'package:chat_kare/features/contacts/domain/entities/contact_entity.dart';
 import 'package:chat_kare/features/contacts/domain/repositories/contacts_repository.dart';
 import 'package:dartz/dartz.dart';
 
@@ -15,10 +15,38 @@ class ContactsRepositoryImpl extends ContactsRepository {
   ContactsRepositoryImpl({required this.remoteDataSource});
 
   @override
-  Future<Result<List<ContactsEntity>>> getContacts() async {
+  Future<Result<List<UserEntity>>> getContacts() async {
     try {
-      final models = await remoteDataSource.getContacts();
-      return Right(models.map((e) => e.toEntity()).toList());
+      // Step 1: Fetch contact entities from contacts subcollection
+      final contactModels = await remoteDataSource.getContacts();
+
+      // Step 2: Fetch full user entities for each contact
+      final List<UserEntity> userEntities = [];
+
+      for (final contact in contactModels) {
+        try {
+          // Fetch user data from users collection
+          final userModel = await remoteDataSource.getUserById(
+            contact.contactUid,
+          );
+
+          if (userModel != null) {
+            // Override displayName with contact's custom name if it exists
+            final userEntity = userModel.toEntity().copyWith(
+              displayName: contact.name.isNotEmpty
+                  ? contact.name
+                  : userModel.displayName,
+            );
+
+            userEntities.add(userEntity);
+          }
+        } catch (e) {
+          // Skip contacts that can't be fetched
+          continue;
+        }
+      }
+
+      return Right(userEntities);
     } on FirebaseException catch (e) {
       return Left(mapExceptionToFailure(e));
     } catch (e) {
@@ -27,7 +55,7 @@ class ContactsRepositoryImpl extends ContactsRepository {
   }
 
   @override
-  Future<Result<void>> addContact(ContactsEntity entity, UserEntity me) async {
+  Future<Result<void>> addContact(ContactEntity entity, UserEntity me) async {
     try {
       // Validate input
       if ((entity.email == null || entity.email!.isEmpty) &&
@@ -80,20 +108,10 @@ class ContactsRepositoryImpl extends ContactsRepository {
         // No temp contact exists, that's fine
       }
 
-      // 5. Generate chat ID (use existing one from temp contact if available, otherwise create new)
-      final chatId =
-          existingTempContact?.chatId ??
-          DateTime.now().millisecondsSinceEpoch.toString();
-
       // 6. Add target user to my contacts
       final newContact = ContactsModel(
-        id: targetUser.uid,
-        name: targetUser.displayName ?? entity.name ,
-        email: targetUser.email,
-        phoneNumber: targetUser.phoneNumber,
-        photoUrl: targetUser.photoUrl,
-        stared: false,
-        chatId: chatId,
+        contactUid: targetUser.uid,
+        name: targetUser.displayName ?? entity.name,
         createdAt: DateTime.now(),
       );
 
@@ -101,13 +119,8 @@ class ContactsRepositoryImpl extends ContactsRepository {
 
       // 7. Add myself to target user's contacts (if they haven't added me yet)
       final myContact = ContactsModel(
-        id: me.uid,
+        contactUid: me.uid,
         name: me.displayName ?? me.email,
-        email: me.email,
-        phoneNumber: me.phoneNumber,
-        photoUrl: me.photoUrl,
-        stared: false,
-        chatId: chatId, // Same chat ID for both contacts
         createdAt: DateTime.now(),
       );
 

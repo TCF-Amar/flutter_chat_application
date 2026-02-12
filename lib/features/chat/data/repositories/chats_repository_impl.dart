@@ -1,5 +1,6 @@
 import 'package:chat_kare/core/errors/error_mapper.dart';
 import 'package:chat_kare/core/utils/typedefs.dart';
+import 'package:chat_kare/features/auth/domain/entities/user_entity.dart';
 import 'package:chat_kare/features/chat/data/datasources/chats_firebase_data_source.dart';
 import 'package:chat_kare/features/chat/data/models/chat_meta_data.dart';
 import 'package:chat_kare/features/chat/data/models/chats_model.dart';
@@ -144,4 +145,6 @@ class ChatsRepositoryImpl implements ChatsRepository {
       return Left(mapExceptionToFailure(e));
     }
   }
+
+ 
 }

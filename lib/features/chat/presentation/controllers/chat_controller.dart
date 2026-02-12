@@ -8,7 +8,7 @@ import 'package:chat_kare/features/auth/domain/usecases/auth_usecase.dart';
 import 'package:chat_kare/features/chat/domain/entities/chats_entity.dart';
 import 'package:chat_kare/features/chat/domain/repositories/chats_repository.dart';
 import 'package:chat_kare/core/services/notification_services.dart';
-import 'package:chat_kare/features/contacts/domain/entities/contacts_entity.dart';
+import 'package:chat_kare/features/contacts/domain/entities/contact_entity.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:geolocator/geolocator.dart';
@@ -32,7 +32,7 @@ class ChatController extends GetxController {
   //* ===========================================================================
   //* DEPENDENCIES & SERVICES
   //* ===========================================================================
-  final ContactsEntity contact;
+  final UserEntity contact;
   final ChatsRepository chatsRepository;
   final NotificationServices notificationService;
   final AuthUsecase authUsecase;
@@ -47,8 +47,6 @@ class ChatController extends GetxController {
   //* ===========================================================================
   //* REACTIVE STATE
   //* ===========================================================================
-  //*/ Current chat user info
-  final Rx<UserEntity?> user = Rx<UserEntity?>(null);
 
   //*/ List of all chat messages
   final RxList<ChatsEntity> messages = <ChatsEntity>[].obs;
@@ -97,7 +95,6 @@ class ChatController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    _loadUserInfo();
     _setupScrollListener();
   }
 
@@ -111,24 +108,6 @@ class ChatController extends GetxController {
     await _bindMessagesStream();
     await _bindTypingStream();
     await _bindUnreadCountStream();
-  }
-
-  //* ===========================================================================
-  //* USER INFO LOADING
-  //* ===========================================================================
-  /*
-   * Loads recipient user information from auth service
-   */
-  Future<void> _loadUserInfo() async {
-    try {
-      final result = await authUsecase.getUser(contact.id);
-      result.fold(
-        (failure) => errorMessage.value = 'Failed to load user info',
-        (userData) => user.value = userData,
-      );
-    } catch (e) {
-      errorMessage.value = 'Error loading user info: $e';
-    }
   }
 
   //* ===========================================================================
@@ -196,7 +175,7 @@ class ChatController extends GetxController {
     _typingSubscription = chatsRepository.getTypingUsersStream(chatId).listen((
       typingUsers,
     ) {
-      isOtherUserTyping.value = typingUsers.contains(contact.id);
+      isOtherUserTyping.value = typingUsers.contains(contact.uid);
     });
   }
 
@@ -306,10 +285,11 @@ class ChatController extends GetxController {
       id: messageId,
       chatId: chatId,
       senderId: currentUserId,
-      receiverId: contact.id,
+      receiverId: contact.uid,
       senderName: authStateNotifier.user?.displayName ?? 'Unknown',
       senderPhotoUrl: authStateNotifier.user?.photoUrl ?? currentUser.photoURL,
-      receiverName: contact.name,
+      receiverName: contact.displayName.toString(),
+      receiverPhotoUrl: contact.photoUrl,
       text: text,
       type: MessageType.text,
       timestamp: DateTime.now(),
@@ -616,11 +596,12 @@ class ChatController extends GetxController {
         id: messageId,
         chatId: chatId,
         senderId: currentUserId,
-        receiverId: contact.id,
+        receiverId: contact.uid,
         senderName: authStateNotifier.user?.displayName ?? 'Unknown',
         senderPhotoUrl:
             authStateNotifier.user?.photoUrl ?? currentUser.photoURL,
-        receiverName: contact.name,
+        receiverName: contact.displayName.toString(),
+        receiverPhotoUrl: contact.photoUrl,
         text: caption,
         type: type,
         timestamp: DateTime.now(),
@@ -731,7 +712,7 @@ class ChatController extends GetxController {
     final currentUserId = Get.find<AuthUsecase>().currentUid;
     if (currentUserId == null) return '';
 
-    final sortedIds = [currentUserId, contact.id]..sort();
+    final sortedIds = [currentUserId, contact.uid]..sort();
     return 'chat_${sortedIds[0]}_${sortedIds[1]}';
   }
 
@@ -773,11 +754,12 @@ class ChatController extends GetxController {
         id: messageId,
         chatId: chatId,
         senderId: currentUserId,
-        receiverId: contact.id,
+        receiverId: contact.uid,
         senderName: authStateNotifier.user?.displayName ?? 'Unknown',
         senderPhotoUrl:
             authStateNotifier.user?.photoUrl ?? currentUser.photoURL,
-        receiverName: contact.name,
+        receiverName: contact.displayName.toString(),
+        receiverPhotoUrl: contact.photoUrl,
         text: locationUrl,
         type: MessageType.location,
         timestamp: DateTime.now(),

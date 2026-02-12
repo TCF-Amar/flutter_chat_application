@@ -1,3 +1,4 @@
+import 'package:chat_kare/core/theme/theme_extensions.dart';
 import 'package:chat_kare/features/notifications/data/models/notifications_model.dart';
 import 'package:chat_kare/features/notifications/presentation/controllers/notifications_controller.dart';
 import 'package:chat_kare/features/notifications/presentation/widgets/notification_tile.dart';
@@ -41,6 +42,8 @@ class _GroupedNotificationTileState extends State<GroupedNotificationTile> {
           margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
           child: ListTile(
             leading: CircleAvatar(
+              radius: 24,
+              backgroundColor: context.colorScheme.primary,
               backgroundImage: firstNotification.senderPhotoUrl.isNotEmpty
                   ? NetworkImage(firstNotification.senderPhotoUrl)
                   : null,

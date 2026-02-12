@@ -1,4 +1,5 @@
 import 'package:chat_kare/core/utils/typedefs.dart';
+import 'package:chat_kare/features/auth/domain/entities/user_entity.dart';
 import 'package:chat_kare/features/chat/domain/repositories/chats_repository.dart';
 import 'package:chat_kare/features/chat/domain/entities/chats_entity.dart';
 import 'package:chat_kare/features/chat/data/models/chat_meta_data.dart';
@@ -59,4 +60,6 @@ class ChatsUsecase {
       text: text,
     );
   }
+
+  
 }

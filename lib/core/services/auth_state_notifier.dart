@@ -114,6 +114,32 @@ class AuthStateNotifier extends ChangeNotifier {
     }
   }
 
+  /// Set user status to online
+  Future<void> setUserOnline() async {
+    if (!_isAuthenticated || user == null) return;
+
+    try {
+      final authRepository = Get.find<AuthRepositoryImpl>();
+      await authRepository.updateUserStatus(uid: user!.uid, status: 'online');
+      _logger.i('User status set to online');
+    } catch (e) {
+      _logger.e('Failed to set user online: $e');
+    }
+  }
+
+  /// Set user status to offline
+  Future<void> setUserOffline() async {
+    if (!_isAuthenticated || user == null) return;
+
+    try {
+      final authRepository = Get.find<AuthRepositoryImpl>();
+      await authRepository.updateUserStatus(uid: user!.uid, status: 'offline');
+      _logger.i('User status set to offline');
+    } catch (e) {
+      _logger.e('Failed to set user offline: $e');
+    }
+  }
+
   @override
   void dispose() {
     _authStateSubscription.cancel();

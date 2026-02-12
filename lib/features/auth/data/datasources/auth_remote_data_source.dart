@@ -1,7 +1,8 @@
 import 'package:chat_kare/core/errors/exceptions.dart' hide FirebaseException;
 import 'package:chat_kare/core/services/firebase_services.dart';
 import 'package:chat_kare/features/auth/data/models/user_model.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart' hide User;
 import 'package:get/get.dart';
 import 'package:logger/logger.dart';
 
@@ -18,6 +19,7 @@ abstract class AuthRemoteDataSource {
   Future<void> createUserDocument(UserModel user);
   Future<UserModel> getUser(String uid);
   Future<void> updateUserData(UserModel user);
+  Future<void> updateUserStatus({required String uid, required String status});
   String? get currentUid;
 }
 
@@ -144,6 +146,26 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
         'DataSource: Failed to update user document - Code: ${e.code}, Message: ${e.message}',
       );
       rethrow;
+    }
+  }
+
+  @override
+  Future<void> updateUserStatus({
+    required String uid,
+    required String status,
+  }) async {
+    try {
+      _logger.i('DataSource: Updating user status to $status for uid: $uid');
+      await fs.firestore.collection('users').doc(uid).update({
+        'status': status,
+        'lastSeen': FieldValue.serverTimestamp(),
+      });
+      _logger.i('DataSource: User status updated successfully');
+    } on FirebaseException catch (e) {
+      _logger.e(
+        'DataSource: Failed to update user status - Code: ${e.code}, Message: ${e.message}',
+      );
+      // Don't rethrow - status update failures shouldn't break the app
     }
   }
 

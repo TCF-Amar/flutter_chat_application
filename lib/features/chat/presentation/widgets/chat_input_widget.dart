@@ -1,4 +1,3 @@
-
 import 'package:chat_kare/core/routes/app_routes.dart';
 import 'package:chat_kare/core/theme/theme_extensions.dart';
 import 'package:go_router/go_router.dart';
@@ -120,14 +119,13 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      replyMessage.receiverName ==
-                              widget.controller.user.value?.uid
+                      replyMessage.receiverName == widget.controller.contact.uid
                           ? 'You'
                           : replyMessage.receiverName,
                       style: TextStyle(
                         color:
                             replyMessage.senderId ==
-                                widget.controller.user.value?.uid
+                                widget.controller.contact.uid
                             ? Colors.blue
                             : Colors.green,
                         fontWeight: FontWeight.bold,

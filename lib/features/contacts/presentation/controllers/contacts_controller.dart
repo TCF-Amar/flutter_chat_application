@@ -1,6 +1,7 @@
 import 'package:chat_kare/core/services/firebase_services.dart';
+import 'package:chat_kare/features/auth/domain/entities/user_entity.dart';
 import 'package:chat_kare/features/auth/presentation/controllers/auth_controller.dart';
-import 'package:chat_kare/features/contacts/domain/entities/contacts_entity.dart';
+import 'package:chat_kare/features/contacts/domain/entities/contact_entity.dart';
 import 'package:chat_kare/features/contacts/domain/usecases/contacts_usecase.dart';
 import 'package:chat_kare/features/shared/widgets/app_snackbar.dart';
 import 'package:flutter/material.dart';
@@ -40,7 +41,8 @@ class ContactsController extends GetxController {
     decimal: true,
   );
 
-  final contacts = <ContactsEntity>[].obs;
+  final _contacts = <UserEntity>[].obs;
+  List<UserEntity> get contacts => _contacts.toList();
 
   final isLoading = false.obs;
   final isUpdating = false.obs;
@@ -54,22 +56,10 @@ class ContactsController extends GetxController {
   }
 
   final searchController = TextEditingController();
-  final searchResults = <ContactsEntity>[].obs;
+  final searchResults = <UserEntity>[].obs;
   final debounce = Duration(milliseconds: 500);
 
-  void findContacts() {
-    searchResults.value = contacts.where((contact) {
-      return contact.name.toLowerCase().contains(
-            searchController.text.toLowerCase(),
-          ) ||
-          contact.phoneNumber!.toLowerCase().contains(
-            searchController.text.toLowerCase(),
-          ) ||
-          contact.email!.toLowerCase().contains(
-            searchController.text.toLowerCase(),
-          );
-    }).toList();
-  }
+  void findContacts() {}
 
   Future<void> fetchContacts() async {
     isLoading.value = true;
@@ -77,7 +67,7 @@ class ContactsController extends GetxController {
     result.fold((failure) {
       Logger().e(failure.message);
       AppSnackbar.error(message: failure.message);
-    }, (data) => contacts.assignAll(data));
+    }, (data) => _contacts.assignAll(data));
     isLoading.value = false;
   }
 
@@ -108,8 +98,8 @@ class ContactsController extends GetxController {
       phoneNumber = contactInfoController.text.trim();
     }
 
-    final newContact = ContactsEntity(
-      id: '',
+    final newContact = ContactEntity(
+      contactUid: '',
       name: nameController.text.trim().isNotEmpty
           ? nameController.text.trim()
           : 'Unknown',
@@ -153,9 +143,18 @@ class ContactsController extends GetxController {
 
   Future<void> refreshContacts() async {
     isLoading.value = true;
-    contacts.clear();
+    _contacts.clear();
     await fetchContacts();
     isLoading.value = false;
+  }
+
+  //* Get contact by uid - returns contact with custom name if available
+  UserEntity? getContactByUid(String uid) {
+    try {
+      return _contacts.firstWhere((contact) => contact.uid == uid);
+    } catch (e) {
+      return null;
+    }
   }
 
   @override

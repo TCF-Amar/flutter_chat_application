@@ -15,6 +15,7 @@ abstract class ContactsRemoteDataSource {
   });
   Future<UserModel?> getUserByEmail(String email);
   Future<UserModel?> getUserByPhone(String phone);
+  Future<UserModel?> getUserById(String uid);
 
   Future<ContactsModel> getTempContact(String uid);
   Future<void> addTempContact({
@@ -56,6 +57,15 @@ class ContactsRemoteDataSourceImpl implements ContactsRemoteDataSource {
 
     final doc = query.docs.first;
     return UserModel.fromJson(doc.data());
+  }
+
+  @override
+  Future<UserModel?> getUserById(String uid) async {
+    final doc = await fs.firestore.collection('users').doc(uid).get();
+
+    if (!doc.exists) return null;
+
+    return UserModel.fromJson(doc.data()!);
   }
 
   @override
@@ -116,7 +126,7 @@ class ContactsRemoteDataSourceImpl implements ContactsRemoteDataSource {
         .collection('users')
         .doc(fs.auth.currentUser?.uid)
         .collection('contacts')
-        .doc(model.id)
+        .doc(model.contactUid)
         .set(model.toJson());
   }
 
@@ -129,7 +139,7 @@ class ContactsRemoteDataSourceImpl implements ContactsRemoteDataSource {
         .collection('users')
         .doc(targetUserId)
         .collection('tempContacts')
-        .doc(contact.id)
+        .doc(contact.contactUid)
         .set(contact.toJson());
   }
 
@@ -154,12 +164,12 @@ class ContactsRemoteDataSourceImpl implements ContactsRemoteDataSource {
   }
 
   @override
-  Future<void> updateContactStar(String contactId, bool stared) async {
+  Future<void> updateContactStar(String contactId, bool starred) async {
     await fs.firestore
         .collection('users')
         .doc(fs.auth.currentUser?.uid)
         .collection('contacts')
         .doc(contactId)
-        .update({'stared': stared});
+        .update({'starred': starred});
   }
 }

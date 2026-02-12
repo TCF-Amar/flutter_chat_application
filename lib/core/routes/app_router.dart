@@ -1,8 +1,10 @@
 import 'package:chat_kare/core/services/auth_state_notifier.dart';
+import 'package:chat_kare/features/auth/domain/entities/user_entity.dart';
 
 import 'package:chat_kare/features/chat/presentation/pages/chat_page.dart';
-import 'package:chat_kare/features/contacts/domain/entities/contacts_entity.dart';
+import 'package:chat_kare/features/contacts/domain/entities/contact_entity.dart';
 import 'package:chat_kare/features/profile/presentation/pages/profile_complete_page.dart';
+import 'package:chat_kare/features/profile/presentation/pages/profile_page.dart';
 import 'package:chat_kare/features/auth/presentation/pages/signin_page.dart';
 import 'package:chat_kare/features/auth/presentation/pages/signup_page.dart';
 import 'package:chat_kare/features/contacts/presentation/pages/add_contact.dart';
@@ -109,12 +111,12 @@ class AppRouter {
           name: AppRoutes.chat.name,
           path: AppRoutes.chat.path,
           builder: (context, state) {
-            if (state.extra == null || state.extra is! ContactsEntity) {
+            if (state.extra == null || state.extra is! UserEntity) {
               return const Scaffold(
                 body: Center(child: Text('Error: Contact details missing')),
               );
             }
-            final contact = state.extra as ContactsEntity;
+            final contact = state.extra as UserEntity;
             Get.lazyPut(
               () => ChatController(
                 contact: contact,
@@ -156,6 +158,11 @@ class AppRouter {
 
             return NetworkMediaViewPage(url: url, type: type);
           },
+        ),
+        GoRoute(
+          name: AppRoutes.profile.name,
+          path: AppRoutes.profile.path,
+          builder: (context, state) => const ProfilePage(),
         ),
       ],
     );

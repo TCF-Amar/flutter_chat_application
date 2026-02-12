@@ -22,23 +22,14 @@ class RecentChatTile extends StatelessWidget {
       },
       leading: CircleAvatar(
         radius: 24,
+        backgroundImage:
+            chat.receiverPhotoUrl != null && chat.receiverPhotoUrl!.isNotEmpty
+            ? NetworkImage(chat.receiverPhotoUrl!)
+            : null,
         backgroundColor: context.colorScheme.primary,
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(24),
-          child:
-              chat.receiverPhotoUrl != null && chat.receiverPhotoUrl!.isNotEmpty
-              ? Image.network(
-                  chat.receiverPhotoUrl!,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) {
-                    return Icon(
-                      Icons.person,
-                      color: context.colorScheme.surface,
-                    );
-                  },
-                )
-              : Icon(Icons.person, color: context.colorScheme.surface),
-        ),
+        child: chat.receiverPhotoUrl == null || chat.receiverPhotoUrl!.isEmpty
+            ? const Icon(Icons.person, color: Colors.white)
+            : null,
       ),
       title: AppText(
         chat.receiverName,

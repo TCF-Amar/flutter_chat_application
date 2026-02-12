@@ -1,5 +1,6 @@
 import 'package:chat_kare/core/routes/app_routes.dart';
 import 'package:chat_kare/core/services/firebase_services.dart';
+import 'package:chat_kare/core/theme/theme_extensions.dart';
 import 'package:chat_kare/features/contacts/presentation/controllers/contacts_controller.dart';
 import 'package:chat_kare/features/shared/widgets/app_scaffold.dart';
 import 'package:chat_kare/features/shared/widgets/app_snackbar.dart';
@@ -116,6 +117,7 @@ class ContactsPage extends StatelessWidget {
                                   // );
                                 },
                                 leading: CircleAvatar(
+                                  backgroundColor: context.colorScheme.primary,
                                   radius: 24,
                                   backgroundImage:
                                       contact.photoUrl != null &&
@@ -130,8 +132,8 @@ class ContactsPage extends StatelessWidget {
                                 ),
                                 title: Row(
                                   children: [
-                                    AppText(contact.name),
-                                    if (fs.currentUser?.uid == contact.id)
+                                    AppText(contact.displayName.toString()),
+                                    if (fs.currentUser?.uid == contact.uid)
                                       const AppText(
                                         " (You)",
                                         color: Colors.grey,
@@ -139,12 +141,12 @@ class ContactsPage extends StatelessWidget {
                                   ],
                                 ),
                                 subtitle:
-                                    (contact.email != null ||
+                                    (contact.email.isNotEmpty ||
                                         contact.phoneNumber != null)
                                     ? AppText(
-                                        contact.phoneNumber ??
-                                            contact.email ??
-                                            "",
+                                        contact.phoneNumber != null
+                                            ? contact.phoneNumber!
+                                            : contact.email,
                                         fontSize: 12,
                                         color: Colors.grey,
                                       )

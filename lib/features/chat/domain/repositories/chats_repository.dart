@@ -1,4 +1,5 @@
 import 'package:chat_kare/core/utils/typedefs.dart';
+import 'package:chat_kare/features/auth/domain/entities/user_entity.dart';
 import 'package:chat_kare/features/chat/data/models/chat_meta_data.dart';
 import 'package:chat_kare/features/chat/domain/entities/chats_entity.dart';
 
@@ -45,4 +46,5 @@ abstract class ChatsRepository {
     required String chatId,
     required String messageId,
   });
+
 }

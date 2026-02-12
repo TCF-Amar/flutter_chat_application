@@ -1,8 +1,9 @@
 import 'package:chat_kare/core/theme/theme_extensions.dart';
+import 'package:chat_kare/features/auth/domain/entities/user_entity.dart';
 import 'package:chat_kare/features/chat/presentation/controllers/chat_controller.dart';
-import 'package:chat_kare/features/contacts/domain/entities/contacts_entity.dart';
 import 'package:chat_kare/features/calls/presentation/pages/call_banner_page.dart';
 import 'package:chat_kare/features/calls/presentation/widgets/calls_widget.dart';
+import 'package:chat_kare/features/contacts/presentation/controllers/contacts_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:go_router/go_router.dart';
@@ -10,12 +11,14 @@ import 'package:intl/intl.dart';
 
 class ChatAppBarWidget extends StatefulWidget implements PreferredSizeWidget {
   final ChatController controller;
-  final ContactsEntity contact;
+  final UserEntity contact;
+  // final ContactsController contactsController;
 
   const ChatAppBarWidget({
     super.key,
     required this.controller,
     required this.contact,
+    // required this.contactsController,
   });
 
   @override
@@ -154,7 +157,7 @@ class _ChatAppBarWidgetState extends State<ChatAppBarWidget> {
                   onPressed: () {
                     showCallBanner(
                       context,
-                      name: widget.contact.name,
+                      name: widget.contact.displayName.toString(),
                       photoUrl: widget.contact.photoUrl,
                       callType: CallType.video,
                       initialStatus: CallStatus.outgoing,
@@ -166,7 +169,7 @@ class _ChatAppBarWidgetState extends State<ChatAppBarWidget> {
                   onPressed: () {
                     showCallBanner(
                       context,
-                      name: widget.contact.name,
+                      name: "${widget.contact.displayName}",
                       photoUrl: widget.contact.photoUrl,
                       callType: CallType.audio,
                       initialStatus: CallStatus.outgoing,
@@ -183,44 +186,39 @@ class _ChatAppBarWidgetState extends State<ChatAppBarWidget> {
   }
 
   Widget _buildAvatar() {
-    return Obx(() {
-      final user = widget.controller.user.value;
-      final photoUrl = user?.photoUrl ?? widget.contact.photoUrl;
+    final photoUrl = widget.contact.photoUrl;
 
-      return CircleAvatar(
-        radius: 20,
-        backgroundColor: context.colorScheme.primary.withValues(alpha: 0.1),
-        backgroundImage: photoUrl != null ? NetworkImage(photoUrl) : null,
-        child: photoUrl == null
-            ? Text(
-                (widget.contact.name).substring(0, 1).toUpperCase(),
-                style: TextStyle(
-                  color: context.colorScheme.primary,
-                  fontWeight: FontWeight.bold,
-                ),
-              )
-            : null,
-      );
-    });
+    return CircleAvatar(
+      radius: 20,
+      backgroundColor: context.colorScheme.primary.withValues(alpha: 0.1),
+      backgroundImage: photoUrl != null ? NetworkImage(photoUrl) : null,
+      child: photoUrl == null
+          ? Text(
+              (widget.contact.displayName.toString())
+                  .substring(0, 1)
+                  .toUpperCase(),
+              style: TextStyle(
+                color: context.colorScheme.primary,
+                fontWeight: FontWeight.bold,
+              ),
+            )
+          : null,
+    );
   }
 
   Widget _buildTitle() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Obx(() {
-          final userName =
-              widget.controller.user.value?.displayName ?? widget.contact.name;
-          return Text(
-            userName,
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: context.colorScheme.textPrimary,
-            ),
-            overflow: TextOverflow.ellipsis,
-          );
-        }),
+        Text(
+          widget.controller.contact.displayName.toString(),
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: context.colorScheme.textPrimary,
+          ),
+          overflow: TextOverflow.ellipsis,
+        ),
         Obx(() {
           if (widget.controller.isOtherUserTyping.value) {
             return Text(
@@ -233,7 +231,7 @@ class _ChatAppBarWidgetState extends State<ChatAppBarWidget> {
             );
           }
 
-          if (widget.controller.user.value?.status == 'online') {
+          if (widget.controller.contact.status == 'online') {
             return Text(
               'Online',
               style: TextStyle(
@@ -242,9 +240,9 @@ class _ChatAppBarWidgetState extends State<ChatAppBarWidget> {
                 fontWeight: FontWeight.w500,
               ),
             );
-          } else if (widget.controller.user.value?.lastSeen != null) {
+          } else if (widget.controller.contact.lastSeen != null) {
             return Text(
-              'Last seen ${_formatLastSeen(widget.controller.user.value!.lastSeen!)}',
+              'Last seen ${_formatLastSeen(widget.controller.contact.lastSeen!)}',
               style: TextStyle(
                 fontSize: 12,
                 color: context.colorScheme.textSecondary,
@@ -283,11 +281,11 @@ class _ChatAppBarWidgetState extends State<ChatAppBarWidget> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (context) {
-        final user = widget.controller.user.value;
-        final photoUrl = user?.photoUrl ?? widget.contact.photoUrl;
-        final name = user?.displayName ?? widget.contact.name;
-        final email = user?.email ?? widget.contact.email;
-        final phone = user?.phoneNumber ?? widget.contact.phoneNumber;
+        final user = widget.controller.contact;
+        final photoUrl = user.photoUrl;
+        final name = user.displayName;
+        final email = user.email;
+        final phone = user.phoneNumber;
 
         return DraggableScrollableSheet(
           initialChildSize: 0.6,
@@ -331,7 +329,7 @@ class _ChatAppBarWidgetState extends State<ChatAppBarWidget> {
                 const SizedBox(height: 16),
                 Center(
                   child: Text(
-                    name,
+                    "$name",
                     style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
@@ -353,7 +351,7 @@ class _ChatAppBarWidgetState extends State<ChatAppBarWidget> {
                 ],
                 const SizedBox(height: 32),
                 const Divider(),
-                if (email != null)
+                if (email.isNotEmpty)
                   ListTile(
                     leading: Icon(
                       Icons.email_outlined,
