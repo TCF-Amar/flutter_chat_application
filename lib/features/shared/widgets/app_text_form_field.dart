@@ -20,6 +20,7 @@ class AppTextFormField extends StatefulWidget {
   final bool? border;
   final List<TextInputFormatter>? inputFormatters;
   final int? maxLength;
+  final TextCapitalization? textCapitalization;
 
   final double? borderRadius;
   final double? borderWidth;
@@ -54,6 +55,7 @@ class AppTextFormField extends StatefulWidget {
     this.maxLength,
     this.focusNode,
     this.textInputAction,
+    this.textCapitalization = TextCapitalization.none,
   });
 
   @override
@@ -74,7 +76,7 @@ class _AppTextFormFieldState extends State<AppTextFormField> {
     return TextFormField(
       controller: widget.controller,
       focusNode: widget.focusNode,
-      textCapitalization: TextCapitalization.sentences,
+      textCapitalization: widget.textCapitalization!,
       obscureText: widget.isPassword ? _obscureText : false,
       keyboardType: widget.keyboardType,
       textInputAction: widget.textInputAction,

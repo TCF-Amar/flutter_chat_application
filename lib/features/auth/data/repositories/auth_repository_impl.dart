@@ -1,3 +1,23 @@
+/*
+ * AuthRepositoryImpl - Authentication Repository Implementation
+ * 
+ * Implements the repository pattern for authentication operations.
+ * Acts as a bridge between domain layer and data source layer.
+ * 
+ * Key Responsibilities:
+ * - Delegates auth operations to AuthRemoteDataSource
+ * - Handles FCM token initialization and cleanup
+ * - Manages user document creation and updates
+ * - Maps Firebase exceptions to domain failures
+ * - Handles profile completion validation
+ * 
+ * Authentication Flow:
+ * 1. Sign in/up via Firebase Auth
+ * 2. Check/create user document in Firestore
+ * 3. Initialize FCM token for notifications
+ * 4. Return user entity to domain layer
+ */
+
 import 'package:chat_kare/core/errors/error_mapper.dart';
 import 'package:chat_kare/core/errors/exceptions.dart' hide FirebaseException;
 import 'package:chat_kare/core/services/firebase_services.dart';
@@ -13,11 +33,29 @@ import 'package:dartz/dartz.dart';
 import 'package:get/get.dart';
 import 'package:logger/logger.dart';
 
+/// Implementation of AuthRepository using Firebase services
 class AuthRepositoryImpl implements AuthRepository {
+  /// Remote data source for Firebase operations
   final AuthRemoteDataSource remoteDataSource = Get.find();
+
+  /// Firebase services instance
   final FirebaseServices fs = Get.find();
+
+  /// Notification services for FCM token management
   final NotificationServices notificationServices = Get.find();
+
+  /// Logger for debugging and error tracking
   final Logger _logger = Logger();
+
+  /// Signs in user with email and password
+  ///
+  /// Flow:
+  /// 1. Authenticate with Firebase Auth
+  /// 2. Fetch or create user document
+  /// 3. Validate profile completion
+  /// 4. Initialize FCM token
+  ///
+  /// Returns Right(UserEntity) on success, Left(Failure) on error.
   @override
   Future<Result<UserEntity>> signIn({
     required String email,
@@ -26,25 +64,32 @@ class AuthRepositoryImpl implements AuthRepository {
     try {
       _logger.i('Repository: Attempting sign-in for $email');
 
+      // Authenticate with Firebase
       final userCredential = await remoteDataSource.signInWithEmailAndPassword(
         email: email,
         password: password,
       );
+
       final user = userCredential.user!;
       final uid = user.uid;
       _logger.i('Repository: Sign-in successful, uid: $uid');
 
       try {
+        // Fetch existing user document
         final userDoc = await remoteDataSource.getUser(uid);
+
+        // Validate profile completion
         if (userDoc.isProfileCompleted == false) {
           return Left(
             mapExceptionToFailure(Exception('Profile not completed')),
           );
         }
 
+        // Initialize FCM token for push notifications
         await notificationServices.initializeFcmToken();
         return Right(userDoc);
       } on UserNotFoundException {
+        // User document doesn't exist, create it
         final userModel = UserModel(
           photoUrl: user.photoURL,
           uid: uid,
@@ -53,6 +98,7 @@ class AuthRepositoryImpl implements AuthRepository {
           isProfileCompleted: false,
           phoneNumber: user.phoneNumber,
         );
+
         await remoteDataSource.createUserDocument(userModel);
         return Right(userModel.toEntity());
       }
@@ -67,6 +113,14 @@ class AuthRepositoryImpl implements AuthRepository {
     }
   }
 
+  /// Creates new user account with email and password
+  ///
+  /// Flow:
+  /// 1. Create Firebase Auth account
+  /// 2. Create user document in Firestore
+  ///
+  /// Note: FCM token is initialized after profile completion.
+  /// Returns Right(UserEntity) on success, Left(Failure) on error.
   @override
   Future<Result<UserEntity>> signUp({
     required String email,
@@ -80,12 +134,12 @@ class AuthRepositoryImpl implements AuthRepository {
         email: email,
         password: password,
       );
+
       final user = credential.user!;
       final uid = user.uid;
       _logger.i('Repository: Sign-up successful, uid: $uid');
 
-      // Get FCM token
-
+      // Create user document with incomplete profile
       final userModel = UserModel(
         uid: uid,
         email: email,
@@ -94,6 +148,7 @@ class AuthRepositoryImpl implements AuthRepository {
         phoneNumber: null,
         isProfileCompleted: false,
       );
+
       await remoteDataSource.createUserDocument(userModel);
 
       return Right(userModel.toEntity());
@@ -104,6 +159,12 @@ class AuthRepositoryImpl implements AuthRepository {
     }
   }
 
+  /// Retrieves user document from Firestore
+  ///
+  /// If user document doesn't exist but user is authenticated,
+  /// creates a new document automatically.
+  ///
+  /// Returns Right(UserEntity) on success, Left(Failure) on error.
   @override
   Future<Result<UserEntity>> getUser(String uid) async {
     try {
@@ -114,14 +175,14 @@ class AuthRepositoryImpl implements AuthRepository {
 
       return Right(userModel.toEntity());
     } on UserNotFoundException {
-      // If user document doesn't exist but user is authenticated (which is likely if we have the uid)
-      // we should create the user document
+      // User document doesn't exist, create it if user is authenticated
       _logger.w(
         'Repository: User document not found for uid: $uid. Creating new document.',
       );
 
       final currentUser = fs.auth.currentUser;
       if (currentUser != null && currentUser.uid == uid) {
+        // Create document for authenticated user
         final userModel = UserModel(
           uid: uid,
           email: currentUser.email!,
@@ -154,6 +215,13 @@ class AuthRepositoryImpl implements AuthRepository {
     }
   }
 
+  /// Signs out current user
+  ///
+  /// Flow:
+  /// 1. Remove device FCM token from Firestore
+  /// 2. Sign out from Firebase Auth
+  ///
+  /// Returns Right(null) on success, Left(Failure) on error.
   @override
   Future<Result<void>> signOut() async {
     try {
@@ -180,10 +248,15 @@ class AuthRepositoryImpl implements AuthRepository {
     }
   }
 
+  /// Updates user profile data
+  ///
+  /// Converts entity to model and updates in Firestore.
+  /// Returns Right(UserEntity) on success, Left(Failure) on error.
   @override
   Future<Result<UserEntity>> updateUser(UserEntity user) async {
     try {
       _logger.i('Repository: Updating user: ${user.uid}');
+
       final userModel = UserModel(
         uid: user.uid,
         email: user.email,
@@ -195,6 +268,7 @@ class AuthRepositoryImpl implements AuthRepository {
 
       await remoteDataSource.updateUserData(userModel);
       _logger.i('Repository: User updated successfully');
+
       return Right(user);
     } on FirebaseException catch (e) {
       _logger.e(
@@ -207,7 +281,9 @@ class AuthRepositoryImpl implements AuthRepository {
     }
   }
 
-  /// Update user online/offline status
+  /// Updates user online/offline status
+  ///
+  /// Non-critical operation - failures are logged but not thrown.
   Future<void> updateUserStatus({
     required String uid,
     required String status,
@@ -221,6 +297,7 @@ class AuthRepositoryImpl implements AuthRepository {
     }
   }
 
+  /// Gets the current authenticated user's UID
   @override
   String? get currentUid => remoteDataSource.currentUid;
 }

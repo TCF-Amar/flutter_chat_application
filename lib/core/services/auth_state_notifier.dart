@@ -80,11 +80,14 @@ class AuthStateNotifier extends ChangeNotifier {
             _isProfileCompleted = false;
             user = null;
           },
-          (userEntity) {
+          (userEntity) async {
             user = userEntity;
             _isProfileCompleted = userEntity.isProfileCompleted;
             if (_isProfileCompleted) {
               _initializeFcmToken();
+              // Set user online and update local user object
+              await setUserOnline();
+              user = user!.copyWith(status: 'online');
             }
             _logger.i('User profile fetched. Completed: $_isProfileCompleted');
           },
@@ -121,6 +124,11 @@ class AuthStateNotifier extends ChangeNotifier {
     try {
       final authRepository = Get.find<AuthRepositoryImpl>();
       await authRepository.updateUserStatus(uid: user!.uid, status: 'online');
+
+      // Update local user entity to reflect status change immediately
+      user = user!.copyWith(status: 'online');
+      notifyListeners();
+
       _logger.i('User status set to online');
     } catch (e) {
       _logger.e('Failed to set user online: $e');
@@ -134,6 +142,11 @@ class AuthStateNotifier extends ChangeNotifier {
     try {
       final authRepository = Get.find<AuthRepositoryImpl>();
       await authRepository.updateUserStatus(uid: user!.uid, status: 'offline');
+
+      // Update local user entity to reflect status change immediately
+      user = user!.copyWith(status: 'offline');
+      notifyListeners();
+
       _logger.i('User status set to offline');
     } catch (e) {
       _logger.e('Failed to set user offline: $e');

@@ -28,6 +28,9 @@ class ChatsModel extends ChatsEntity {
     super.replyToMediaUrl,
     super.deletedBy,
     super.isDeletedForEveryone,
+    super.uploadProgress,
+    super.localFilePath,
+    super.uploadError,
   });
 
   factory ChatsModel.fromJson(Map<String, dynamic> json) {
@@ -58,6 +61,10 @@ class ChatsModel extends ChatsEntity {
       replyToMediaUrl: json["replyToMediaUrl"],
       deletedBy: List<String>.from(json["deletedBy"] ?? []),
       isDeletedForEveryone: json["isDeletedForEveryone"] ?? false,
+      // Upload state fields are local-only, not stored in Firestore
+      uploadProgress: 0.0,
+      localFilePath: null,
+      uploadError: null,
     );
   }
 
@@ -86,6 +93,8 @@ class ChatsModel extends ChatsEntity {
       "replyToMediaUrl": replyToMediaUrl,
       "deletedBy": deletedBy,
       "isDeletedForEveryone": isDeletedForEveryone,
+      // Note: uploadProgress, localFilePath, uploadError are NOT included
+      // They are local-only fields for UI state management
     };
   }
 
@@ -115,6 +124,9 @@ class ChatsModel extends ChatsEntity {
       replyToMediaUrl: replyToMediaUrl,
       deletedBy: deletedBy,
       isDeletedForEveryone: isDeletedForEveryone,
+      uploadProgress: uploadProgress,
+      localFilePath: localFilePath,
+      uploadError: uploadError,
     );
   }
 
@@ -145,6 +157,9 @@ class ChatsModel extends ChatsEntity {
       replyToMediaUrl: entity.replyToMediaUrl,
       deletedBy: entity.deletedBy,
       isDeletedForEveryone: entity.isDeletedForEveryone,
+      uploadProgress: entity.uploadProgress,
+      localFilePath: entity.localFilePath,
+      uploadError: entity.uploadError,
     );
   }
 }

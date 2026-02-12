@@ -22,6 +22,11 @@ class ChatsEntity {
   final MessageType? replyToType;
   final String? replyToMediaUrl;
 
+  // Upload state tracking
+  final double uploadProgress; // 0.0 to 1.0
+  final String? localFilePath; // Local file path for preview and retry
+  final String? uploadError; // Error message if upload failed
+
   ChatsEntity({
     required this.id,
     required this.chatId,
@@ -47,6 +52,9 @@ class ChatsEntity {
     this.replyToMediaUrl,
     this.deletedBy = const [],
     this.isDeletedForEveryone = false,
+    this.uploadProgress = 0.0,
+    this.localFilePath,
+    this.uploadError,
   });
 
   final List<String> deletedBy;
@@ -55,7 +63,7 @@ class ChatsEntity {
 
 enum MessageType { text, image, video, audio, document, location }
 
-enum MessageStatus { sending, sent, delivered, read }
+enum MessageStatus { sending, sent, delivered, read, uploading, failed }
 
 class ChatMetadataEntity {
   final String id;

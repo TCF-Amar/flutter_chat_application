@@ -1,3 +1,24 @@
+/*
+ * ContactsRepositoryImpl - Contacts Repository Implementation
+ * 
+ * Implements the repository pattern for contacts management.
+ * Acts as a bridge between domain layer and data source layer.
+ * 
+ * Key Responsibilities:
+ * - Manages contact CRUD operations
+ * - Handles temporary contacts (pending requests)
+ * - Fetches full user details for contacts
+ * - Validates contact operations (duplicates, self-add)
+ * - Maps Firebase exceptions to domain failures
+ * 
+ * Contact Flow:
+ * 1. User adds contact by email/phone
+ * 2. System finds target user and validates
+ * 3. Adds to current user's contacts
+ * 4. Creates temp contact for target user (if they haven't added you)
+ * 5. When target user adds you, temp contact is removed
+ */
+
 import 'package:chat_kare/core/errors/error_mapper.dart';
 import 'package:chat_kare/core/errors/exceptions.dart';
 import 'package:chat_kare/core/utils/typedefs.dart';
@@ -9,11 +30,21 @@ import 'package:chat_kare/features/contacts/domain/entities/contact_entity.dart'
 import 'package:chat_kare/features/contacts/domain/repositories/contacts_repository.dart';
 import 'package:dartz/dartz.dart';
 
+//* Implementation of ContactsRepository using Firebase data source
 class ContactsRepositoryImpl extends ContactsRepository {
+  //* Remote data source for Firebase operations
   final ContactsRemoteDataSource remoteDataSource;
 
   ContactsRepositoryImpl({required this.remoteDataSource});
 
+  //* Gets all contacts for current user with full user details
+  //*
+  //* Flow:
+  //* 1. Fetch contact entities from contacts subcollection
+  //* 2. For each contact, fetch full user details from users collection
+  //* 3. Override display name with custom contact name if set
+  //*
+  //* Returns Right([List]<[UserEntity]>) on success, Left(Failure) on error.
   @override
   Future<Result<List<UserEntity>>> getContacts() async {
     try {
@@ -54,10 +85,22 @@ class ContactsRepositoryImpl extends ContactsRepository {
     }
   }
 
+  //* Adds a new contact for the current user
+  //*
+  //* Flow:
+  //* 1. Validate input (email or phone required)
+  //* 2. Find target user by email or phone
+  //* 3. Prevent self-addition
+  //* 4. Check for duplicate contacts
+  //* 5. Check for pending temp contact (mutual add)
+  //* 6. Add to current user's contacts
+  //* 7. Add temp contact for target user (if needed)
+  //*
+  //* Returns Right(null) on success, Left(Failure) on error.
   @override
   Future<Result<void>> addContact(ContactEntity entity, UserEntity me) async {
     try {
-      // Validate input
+      // Validate input - require email or phone
       if ((entity.email == null || entity.email!.isEmpty) &&
           (entity.phoneNumber == null || entity.phoneNumber!.isEmpty)) {
         return Left(
@@ -65,7 +108,7 @@ class ContactsRepositoryImpl extends ContactsRepository {
         );
       }
 
-      // 1. Find target user
+      // 1. Find target user by email or phone
       UserModel? targetUser;
       if (entity.email != null && entity.email!.isNotEmpty) {
         targetUser = await remoteDataSource.getUserByEmail(entity.email!);
@@ -73,6 +116,7 @@ class ContactsRepositoryImpl extends ContactsRepository {
         targetUser = await remoteDataSource.getUserByPhone(entity.phoneNumber!);
       }
 
+      // User not found
       if (targetUser == null) {
         return Left(mapExceptionToFailure(Exception("User not found")));
       }
@@ -88,6 +132,7 @@ class ContactsRepositoryImpl extends ContactsRepository {
       final contactExists = await remoteDataSource.isContactExists(
         targetUser.uid,
       );
+
       if (contactExists) {
         return Left(
           mapExceptionToFailure(
@@ -96,19 +141,22 @@ class ContactsRepositoryImpl extends ContactsRepository {
         );
       }
 
-      // 4. Check for pending contact request (temp contact)
-      ContactsModel? existingTempContact;
+      // 5. Check for a pending contact request (temporary contact) from the target user.
+      // This scenario occurs if the target user has already added the current user.
       try {
-        existingTempContact = await remoteDataSource.getTempContact(
-          targetUser.uid,
-        );
-        // If temp contact exists, remove it (this means the target user already added me)
+        // Attempt to delete a temporary contact where the current user is the 'temp' contact
+        // for the target user. If successful, it means a mutual addition has occurred,
+        // and the temporary status is no longer needed.
         await remoteDataSource.deleteTempContact(targetUser.uid);
       } catch (e) {
-        // No temp contact exists, that's fine
+        // If no temporary contact exists, the `deleteTempContact` might throw an error.
+        // This is an expected scenario and means the target user hasn't added the current user yet.
+        // We simply ignore this error and proceed.
       }
 
-      // 6. Add target user to my contacts
+      // 6. Add the target user to the current user's contacts list.
+      // Create a ContactsModel for the new contact, using the target user's UID
+      // and either the custom name provided in the entity or the target user's display name.
       final newContact = ContactsModel(
         contactUid: targetUser.uid,
         name: targetUser.displayName ?? entity.name,
@@ -146,6 +194,9 @@ class ContactsRepositoryImpl extends ContactsRepository {
     }
   }
 
+  //* Removes a contact from current user's contact list
+  //*
+  //* Returns Right(null) on success, Left(Failure) on error.
   Future<Result<void>> removeContact(String contactId) async {
     try {
       await remoteDataSource.removeContact(contactId);
@@ -157,6 +208,9 @@ class ContactsRepositoryImpl extends ContactsRepository {
     }
   }
 
+  //* Toggles starred/favorited status for a contact
+  //*
+  //* Returns Right(null) on success, Left(Failure) on error.
   Future<Result<void>> toggleStarContact(String contactId, bool stared) async {
     try {
       await remoteDataSource.updateContactStar(contactId, stared);

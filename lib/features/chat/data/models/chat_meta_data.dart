@@ -1,3 +1,4 @@
+import 'package:chat_kare/features/chat/domain/entities/chats_entity.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class ChatMetaData {
@@ -11,6 +12,7 @@ class ChatMetaData {
   final String? lastMessageSenderName;
   final String? lastMessageSenderPhotoUrl;
   final int unreadCount;
+  final MessageType lastMessageType;
 
   ChatMetaData({
     required this.chatId,
@@ -23,6 +25,7 @@ class ChatMetaData {
     this.lastMessageSenderName,
     this.lastMessageSenderPhotoUrl,
     required this.unreadCount,
+    required this.lastMessageType,
   });
 
   Map<String, dynamic> toMap() {
@@ -37,6 +40,7 @@ class ChatMetaData {
       'lastMessageSenderName': lastMessageSenderName,
       'lastMessageSenderPhotoUrl': lastMessageSenderPhotoUrl,
       'unreadCount': unreadCount,
+      'lastMessageType': lastMessageType.name,
     };
   }
 
@@ -52,6 +56,10 @@ class ChatMetaData {
       lastMessageSenderName: map['lastMessageSenderName'],
       lastMessageSenderPhotoUrl: map['lastMessageSenderPhotoUrl'],
       unreadCount: map['unreadCount']?.toInt() ?? 0,
+      lastMessageType: MessageType.values.firstWhere(
+        (e) => e.name == map['lastMessageType'],
+        orElse: () => MessageType.text,
+      ),
     );
   }
 }

@@ -8,7 +8,6 @@ import 'package:chat_kare/features/auth/domain/usecases/auth_usecase.dart';
 import 'package:chat_kare/features/chat/domain/entities/chats_entity.dart';
 import 'package:chat_kare/features/chat/domain/repositories/chats_repository.dart';
 import 'package:chat_kare/core/services/notification_services.dart';
-import 'package:chat_kare/features/contacts/domain/entities/contact_entity.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:geolocator/geolocator.dart';
@@ -66,6 +65,12 @@ class ChatController extends GetxController {
 
   //*/ Chat notification mute status
   final RxBool isMuted = false.obs;
+
+  //*/ Upload progress tracking (messageId -> progress 0.0 to 1.0)
+  final RxMap<String, double> uploadProgress = <String, double>{}.obs;
+
+  //*/ Active upload cancellation flags (messageId -> shouldCancel)
+  final RxMap<String, bool> uploadCancellations = <String, bool>{}.obs;
 
   //* ===========================================================================
   //* UI CONTROLLERS
@@ -578,53 +583,168 @@ class ChatController extends GetxController {
       return;
     }
 
+    final messageId = DateTime.now().millisecondsSinceEpoch.toString();
+    final replyTo = replyMessage.value;
+
+    // Create message with uploading status and local file path
+    final message = ChatsEntity(
+      id: messageId,
+      chatId: chatId,
+      senderId: currentUserId,
+      receiverId: contact.uid,
+      senderName: authStateNotifier.user?.displayName ?? 'Unknown',
+      senderPhotoUrl: authStateNotifier.user?.photoUrl ?? currentUser.photoURL,
+      receiverName: contact.displayName.toString(),
+      receiverPhotoUrl: contact.photoUrl,
+      text: caption,
+      type: type,
+      timestamp: DateTime.now(),
+      isRead: false,
+      readBy: const [],
+      status: MessageStatus.uploading,
+      replyToMessageId: replyTo?.id,
+      replyToSenderName: replyTo?.senderName,
+      replyToText: replyTo?.text,
+      replyToType: replyTo?.type,
+      replyToMediaUrl: replyTo?.mediaUrl,
+      localFilePath: file.path, // Store local path for preview and retry
+      uploadProgress: 0.0,
+    );
+
+    cancelReply();
+    messages.add(message);
+    uploadProgress[messageId] = 0.0;
+    uploadCancellations[messageId] = false;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      scrollToBottom();
+    });
+
     try {
       log.d("Uploading media...");
-      final mediaUrl = await CloudinaryUtils.uploadFile(
+
+      // Upload to Cloudinary with progress tracking
+      final uploadResult = await CloudinaryUtils.uploadFile(
         file: file,
         isVideo: type == MessageType.video,
+        onProgress: (progress) {
+          // Check if upload was cancelled
+          if (uploadCancellations[messageId] == true) {
+            return;
+          }
+          uploadProgress[messageId] = progress;
+
+          // Update message in list with progress
+          final index = messages.indexWhere((m) => m.id == messageId);
+          if (index != -1) {
+            messages[index] = ChatsEntity(
+              id: message.id,
+              chatId: message.chatId,
+              senderId: message.senderId,
+              receiverId: message.receiverId,
+              senderName: message.senderName,
+              receiverName: message.receiverName,
+              senderPhotoUrl: message.senderPhotoUrl,
+              receiverPhotoUrl: message.receiverPhotoUrl,
+              text: message.text,
+              type: message.type,
+              timestamp: message.timestamp,
+              isRead: message.isRead,
+              readBy: message.readBy,
+              status: MessageStatus.uploading,
+              replyToMessageId: message.replyToMessageId,
+              replyToSenderName: message.replyToSenderName,
+              replyToText: message.replyToText,
+              replyToType: message.replyToType,
+              replyToMediaUrl: message.replyToMediaUrl,
+              localFilePath: message.localFilePath,
+              uploadProgress: progress,
+            );
+          }
+        },
       );
-      if (mediaUrl == null) return;
+
+      // Check if upload was cancelled
+      if (uploadCancellations[messageId] == true) {
+        log.d("Upload cancelled by user");
+        messages.removeWhere((m) => m.id == messageId);
+        uploadProgress.remove(messageId);
+        uploadCancellations.remove(messageId);
+        return;
+      }
+
+      if (uploadResult['success'] != true) {
+        // Upload failed
+        final errorMsg = uploadResult['error'] ?? 'Unknown error';
+        log.e("Upload failed: $errorMsg");
+
+        // Update message to failed status
+        final index = messages.indexWhere((m) => m.id == messageId);
+        if (index != -1) {
+          messages[index] = ChatsEntity(
+            id: message.id,
+            chatId: message.chatId,
+            senderId: message.senderId,
+            receiverId: message.receiverId,
+            senderName: message.senderName,
+            receiverName: message.receiverName,
+            senderPhotoUrl: message.senderPhotoUrl,
+            receiverPhotoUrl: message.receiverPhotoUrl,
+            text: message.text,
+            type: message.type,
+            timestamp: message.timestamp,
+            isRead: message.isRead,
+            readBy: message.readBy,
+            status: MessageStatus.failed,
+            replyToMessageId: message.replyToMessageId,
+            replyToSenderName: message.replyToSenderName,
+            replyToText: message.replyToText,
+            replyToType: message.replyToType,
+            replyToMediaUrl: message.replyToMediaUrl,
+            localFilePath: message.localFilePath,
+            uploadError: errorMsg,
+          );
+        }
+        uploadProgress.remove(messageId);
+        return;
+      }
+
+      final mediaUrl = uploadResult['url'];
       log.d(mediaUrl);
       log.d("Media uploaded successfully");
 
+      // Update message with uploaded URL and sending status
+      final index = messages.indexWhere((m) => m.id == messageId);
+      if (index != -1) {
+        messages[index] = ChatsEntity(
+          id: message.id,
+          chatId: message.chatId,
+          senderId: message.senderId,
+          receiverId: message.receiverId,
+          senderName: message.senderName,
+          receiverName: message.receiverName,
+          senderPhotoUrl: message.senderPhotoUrl,
+          receiverPhotoUrl: message.receiverPhotoUrl,
+          text: message.text,
+          type: message.type,
+          timestamp: message.timestamp,
+          isRead: message.isRead,
+          readBy: message.readBy,
+          status: MessageStatus.sending,
+          replyToMessageId: message.replyToMessageId,
+          replyToSenderName: message.replyToSenderName,
+          replyToText: message.replyToText,
+          replyToType: message.replyToType,
+          replyToMediaUrl: message.replyToMediaUrl,
+          mediaUrl: mediaUrl,
+          mediaSize: await file.length(),
+        );
+      }
+
+      uploadProgress.remove(messageId);
+
       log.d("Sending message...");
-      final messageId = DateTime.now().millisecondsSinceEpoch.toString();
-      final replyTo = replyMessage.value;
-
-      final message = ChatsEntity(
-        id: messageId,
-        chatId: chatId,
-        senderId: currentUserId,
-        receiverId: contact.uid,
-        senderName: authStateNotifier.user?.displayName ?? 'Unknown',
-        senderPhotoUrl:
-            authStateNotifier.user?.photoUrl ?? currentUser.photoURL,
-        receiverName: contact.displayName.toString(),
-        receiverPhotoUrl: contact.photoUrl,
-        text: caption,
-        type: type,
-        timestamp: DateTime.now(),
-        isRead: false,
-        readBy: const [],
-        status: MessageStatus.sending,
-        replyToMessageId: replyTo?.id,
-        replyToSenderName: replyTo?.senderName,
-        replyToText: replyTo?.text,
-        replyToType: replyTo?.type,
-        replyToMediaUrl: replyTo?.mediaUrl,
-        mediaUrl: mediaUrl,
-        mediaSize: await file.length(),
-      );
-
-      cancelReply();
-      messages.add(message);
-
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        scrollToBottom();
-      });
-
-      final result = await chatsRepository.sendMessage(message);
+      final result = await chatsRepository.sendMessage(messages[index]);
       result.fold(
         (failure) {
           messages.remove(message);
@@ -636,7 +756,71 @@ class ChatController extends GetxController {
       );
     } catch (e) {
       log.e(e);
+      // Update message to failed status
+      final index = messages.indexWhere((m) => m.id == messageId);
+      if (index != -1) {
+        messages[index] = ChatsEntity(
+          id: message.id,
+          chatId: message.chatId,
+          senderId: message.senderId,
+          receiverId: message.receiverId,
+          senderName: message.senderName,
+          receiverName: message.receiverName,
+          senderPhotoUrl: message.senderPhotoUrl,
+          receiverPhotoUrl: message.receiverPhotoUrl,
+          text: message.text,
+          type: message.type,
+          timestamp: message.timestamp,
+          isRead: message.isRead,
+          readBy: message.readBy,
+          status: MessageStatus.failed,
+          replyToMessageId: message.replyToMessageId,
+          replyToSenderName: message.replyToSenderName,
+          replyToText: message.replyToText,
+          replyToType: message.replyToType,
+          replyToMediaUrl: message.replyToMediaUrl,
+          localFilePath: message.localFilePath,
+          uploadError: e.toString(),
+        );
+      }
+      uploadProgress.remove(messageId);
     }
+  }
+
+  /// Retry failed upload
+  Future<void> retryUpload(String messageId) async {
+    final index = messages.indexWhere((m) => m.id == messageId);
+    if (index == -1) return;
+
+    final message = messages[index];
+    if (message.localFilePath == null) {
+      errorMessage.value = 'Cannot retry: local file not found';
+      return;
+    }
+
+    final file = File(message.localFilePath!);
+    if (!await file.exists()) {
+      errorMessage.value = 'Cannot retry: local file no longer exists';
+      return;
+    }
+
+    // Remove the failed message and resend
+    messages.removeAt(index);
+    await _sendMediaMessage(file, message.text, message.type);
+  }
+
+  /// Cancel ongoing upload
+  void cancelUpload(String messageId) {
+    uploadCancellations[messageId] = true;
+
+    // Remove message from list
+    messages.removeWhere((m) => m.id == messageId);
+    uploadProgress.remove(messageId);
+
+    // Clean up cancellation flag after a delay
+    Future.delayed(const Duration(seconds: 2), () {
+      uploadCancellations.remove(messageId);
+    });
   }
 
   //* ===========================================================================

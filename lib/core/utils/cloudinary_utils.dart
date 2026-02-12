@@ -11,9 +11,10 @@ class CloudinaryUtils {
       "dnhvzcxfw"; // Replace with your actual cloud name
   static final Logger _log = Logger();
 
-  static Future<String?> uploadFile({
+  static Future<Map<String, dynamic>> uploadFile({
     required File file,
     bool isVideo = false,
+    Function(double)? onProgress,
   }) async {
     try {
       path.basename(file.path);
@@ -30,20 +31,39 @@ class CloudinaryUtils {
         ..files.add(await http.MultipartFile.fromPath('file', file.path));
 
       final streamedResponse = await request.send();
-      final response = await http.Response.fromStream(streamedResponse);
 
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
+      // Track upload progress
+      int totalBytes = streamedResponse.contentLength ?? 0;
+      int receivedBytes = 0;
+
+      List<int> responseBytes = [];
+      await for (var chunk in streamedResponse.stream) {
+        responseBytes.addAll(chunk);
+        receivedBytes += chunk.length;
+
+        if (totalBytes > 0 && onProgress != null) {
+          double progress = receivedBytes / totalBytes;
+          onProgress(progress);
+        }
+      }
+
+      final responseBody = String.fromCharCodes(responseBytes);
+
+      if (streamedResponse.statusCode == 200) {
+        final data = jsonDecode(responseBody);
         _log.i("Upload success: $data");
-        return data['url'];
+        return {'success': true, 'url': data['url']};
       } else {
-        _log.e("Upload failed with status: ${response.statusCode}");
-        _log.e("Response body: ${response.body}");
-        return null;
+        _log.e("Upload failed with status: ${streamedResponse.statusCode}");
+        _log.e("Response body: $responseBody");
+        return {
+          'success': false,
+          'error': 'Upload failed with status ${streamedResponse.statusCode}',
+        };
       }
     } catch (e, s) {
       _log.e("Cloudinary upload failed", error: e, stackTrace: s);
-      return null;
+      return {'success': false, 'error': e.toString()};
     }
   }
 }

@@ -1,7 +1,6 @@
 import 'package:chat_kare/core/routes/app_routes.dart';
 import 'package:chat_kare/core/theme/theme_extensions.dart';
 import 'package:chat_kare/features/auth/domain/entities/user_entity.dart';
-import 'package:chat_kare/features/contacts/domain/entities/contact_entity.dart';
 import 'package:chat_kare/features/shared/widgets/app_snackbar.dart';
 import 'package:chat_kare/features/shared/widgets/app_text.dart';
 import 'package:flutter/material.dart';
@@ -35,7 +34,7 @@ class ChatTiles extends StatelessWidget {
                     errorBuilder: (context, error, stackTrace) {
                       return Icon(
                         Icons.person,
-                        color: context.colorScheme.primary,
+                        color: context.colorScheme.surface,
                       );
                     },
                   )
@@ -43,7 +42,11 @@ class ChatTiles extends StatelessWidget {
           ),
         ),
       ),
-      title: AppText(contact.displayName.toString(), fontSize: 16, fontWeight: FontWeight.w600),
+      title: AppText(
+        contact.displayName.toString(),
+        fontSize: 16,
+        fontWeight: FontWeight.w600,
+      ),
       subtitle: AppText(
         contact.phoneNumber ?? "",
         fontSize: 12,

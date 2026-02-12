@@ -1,6 +1,18 @@
+/*
+ * ChatsRepositoryImpl - Chat Repository Implementation
+ * 
+ * Implements the repository pattern for chat operations.
+ * Acts as a bridge between the domain layer and data source layer.
+ * 
+ * Responsibilities:
+ * - Delegates data operations to ChatsRemoteDataSource
+ * - Converts between models (data layer) and entities (domain layer)
+ * - Handles error mapping from Firebase exceptions to domain failures
+ * - Provides streams for real-time chat updates
+ */
+
 import 'package:chat_kare/core/errors/error_mapper.dart';
 import 'package:chat_kare/core/utils/typedefs.dart';
-import 'package:chat_kare/features/auth/domain/entities/user_entity.dart';
 import 'package:chat_kare/features/chat/data/datasources/chats_firebase_data_source.dart';
 import 'package:chat_kare/features/chat/data/models/chat_meta_data.dart';
 import 'package:chat_kare/features/chat/data/models/chats_model.dart';
@@ -11,11 +23,17 @@ import 'package:firebase_core/firebase_core.dart';
 
 import 'package:chat_kare/features/chat/domain/repositories/chats_repository.dart';
 
+/// Implementation of ChatsRepository using Firebase as data source
 class ChatsRepositoryImpl implements ChatsRepository {
+  /// Remote data source for Firebase operations
   ChatsRemoteDataSourceImpl chatFirebaseDataSource;
 
   ChatsRepositoryImpl({required this.chatFirebaseDataSource});
 
+  /// Sends a message to Firestore
+  ///
+  /// Converts entity to model, sends via data source, and handles errors.
+  /// Returns Right(null) on success, Left(Failure) on error.
   @override
   Future<Result<void>> sendMessage(ChatsEntity message) async {
     try {
@@ -28,6 +46,13 @@ class ChatsRepositoryImpl implements ChatsRepository {
     }
   }
 
+  /// Gets real-time stream of messages for a chat
+  ///
+  /// Converts models from data source to entities for domain layer.
+  ///
+  /// Parameters:
+  /// - [chatId]: Unique identifier for the chat
+  /// - [limit]: Maximum number of messages to fetch (default: 20)
   @override
   Stream<List<ChatsEntity>> getMessagesStream(String chatId, {int limit = 20}) {
     return chatFirebaseDataSource.getMessages(chatId, limit).map((models) {
@@ -35,6 +60,9 @@ class ChatsRepositoryImpl implements ChatsRepository {
     });
   }
 
+  /// Gets real-time stream of users currently typing in a chat
+  ///
+  /// Returns list of user IDs who are currently typing.
   @override
   Stream<List<String>> getTypingUsersStream(String chatId) {
     return chatFirebaseDataSource.getChatStream(chatId).map((snapshot) {
@@ -47,6 +75,12 @@ class ChatsRepositoryImpl implements ChatsRepository {
     });
   }
 
+  /// Updates typing status for a user in a chat
+  ///
+  /// Parameters:
+  /// - [chatId]: Chat identifier
+  /// - [userId]: User who is typing
+  /// - [isTyping]: true if user started typing, false if stopped
   @override
   Future<void> sendTypingStatus({
     required String chatId,
@@ -60,6 +94,9 @@ class ChatsRepositoryImpl implements ChatsRepository {
     );
   }
 
+  /// Marks a specific message as read by a user
+  ///
+  /// Updates message read status and decrements unread count.
   @override
   Future<void> markMessageAsRead({
     required String chatId,
@@ -73,6 +110,9 @@ class ChatsRepositoryImpl implements ChatsRepository {
     );
   }
 
+  /// Marks all unread messages in a chat as read
+  ///
+  /// Batch operation to mark all messages as read at once.
   @override
   Future<void> markAllMessagesAsRead({
     required String chatId,
@@ -84,11 +124,15 @@ class ChatsRepositoryImpl implements ChatsRepository {
     );
   }
 
+  /// Gets real-time stream of unread message count for a user
   @override
   Stream<int> getUnreadCountStream(String chatId, String userId) {
     return chatFirebaseDataSource.getUnreadCountStream(chatId, userId);
   }
 
+  /// Edits an existing message's text content
+  ///
+  /// Returns Right(true) on success, Left(Failure) on error.
   @override
   Future<Result<bool>> editMessage({
     required String chatId,
@@ -107,11 +151,18 @@ class ChatsRepositoryImpl implements ChatsRepository {
     }
   }
 
+  /// Gets real-time stream of all chats for a user
+  ///
+  /// Returns chat metadata including last message, unread count, etc.
   @override
   Stream<List<ChatMetaData>> getChatsStream(String userId) {
     return chatFirebaseDataSource.getChatsStream(userId);
   }
 
+  /// Deletes a message for the current user only
+  ///
+  /// Message remains visible to other participants.
+  /// Returns Right(null) on success, Left(Failure) on error.
   @override
   Future<Result<void>> deleteMessageForMe({
     required String chatId,
@@ -130,6 +181,11 @@ class ChatsRepositoryImpl implements ChatsRepository {
     }
   }
 
+  /// Deletes a message for all participants
+  ///
+  /// Message content is removed and marked as deleted for everyone.
+  /// Only the sender can delete for everyone.
+  /// Returns Right(null) on success, Left(Failure) on error.
   @override
   Future<Result<void>> deleteMessageForEveryone({
     required String chatId,
@@ -145,6 +201,4 @@ class ChatsRepositoryImpl implements ChatsRepository {
       return Left(mapExceptionToFailure(e));
     }
   }
-
- 
 }

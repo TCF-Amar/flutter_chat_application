@@ -4,7 +4,7 @@ import 'package:chat_kare/features/auth/domain/entities/user_entity.dart';
 import 'package:chat_kare/features/auth/domain/usecases/auth_usecase.dart';
 import 'package:chat_kare/features/chat/data/models/chat_meta_data.dart';
 import 'package:chat_kare/features/chat/domain/usecases/chats_usecase.dart';
-import 'package:chat_kare/features/contacts/domain/entities/contact_entity.dart';
+import 'package:chat_kare/features/contacts/presentation/controllers/contacts_controller.dart';
 import 'package:chat_kare/core/services/auth_state_notifier.dart';
 import 'package:get/get.dart';
 
@@ -104,7 +104,40 @@ class ChatListController extends GetxController {
         );
   }
 
-  //* Helper to convert ChatMetaData to UserEntity for navigation
+  //* ==============================================================================
+  //* USER DETAILS FETCHING
+  //* ==============================================================================
+
+  /// Fetch full user details from Firestore
+  Future<UserEntity?> getUserDetails(String userId) async {
+    try {
+      final userResult = await authUseCase.getUser(userId);
+      return userResult.fold((failure) {
+        // Log error but don't throw
+        return null;
+      }, (user) => user);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /// Check if a user is in the current user's contact list
+  Future<bool> isUserInContacts(String userId) async {
+    try {
+      // Try to get ContactsController if it's registered
+      if (Get.isRegistered<ContactsController>()) {
+        final contactsController = Get.find<ContactsController>();
+        final contact = contactsController.getContactByUid(userId);
+        return contact != null;
+      }
+      return false;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  //* Helper to convert ChatMetaData to UserEntity for navigation (deprecated)
+  @Deprecated('Use getUserDetails() instead to fetch full user data')
   UserEntity getContactFromChat(ChatMetaData chat) {
     return UserEntity(
       uid: chat.receiverId,

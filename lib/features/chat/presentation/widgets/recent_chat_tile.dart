@@ -1,6 +1,7 @@
 import 'package:chat_kare/core/routes/app_routes.dart';
 import 'package:chat_kare/core/theme/theme_extensions.dart';
 import 'package:chat_kare/features/chat/data/models/chat_meta_data.dart';
+import 'package:chat_kare/features/chat/domain/entities/chats_entity.dart';
 import 'package:chat_kare/features/chat/presentation/controllers/chat_list_controller.dart';
 import 'package:chat_kare/features/shared/widgets/app_text.dart';
 import 'package:flutter/material.dart';
@@ -37,7 +38,17 @@ class RecentChatTile extends StatelessWidget {
         fontWeight: FontWeight.w600,
       ),
       subtitle: AppText(
-        chat.lastMessage,
+        chat.lastMessageType == MessageType.text
+            ? chat.lastMessage
+            : chat.lastMessageType == MessageType.image
+            ? "📷 Image"
+            : chat.lastMessageType == MessageType.video
+            ? "📽️ Video"
+            : chat.lastMessageType == MessageType.audio
+            ? "🔉 Audio"
+            : chat.lastMessageType == MessageType.document
+            ? "📄 Document"
+            : "",
         fontSize: 12,
         maxLines: 1,
         overflow: TextOverflow.ellipsis,

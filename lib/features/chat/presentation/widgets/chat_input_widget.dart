@@ -1,3 +1,20 @@
+/*
+ * ChatInputWidget - Message Input Component for Chat Screen
+ * 
+ * This widget provides a comprehensive message input interface with:
+ * - Text message input with emoji support
+ * - Media attachments (camera, gallery, documents, location)
+ * - Voice recording capability
+ * - Message editing mode with preview
+ * - Reply-to-message mode with preview
+ * - Real-time typing indicators
+ * 
+ * The widget dynamically switches between three states:
+ * 1. Normal Mode: Standard message input
+ * 2. Editing Mode: Shows editing preview with original message
+ * 3. Reply Mode: Shows reply preview with quoted message
+ */
+
 import 'package:chat_kare/core/routes/app_routes.dart';
 import 'package:chat_kare/core/theme/theme_extensions.dart';
 import 'package:go_router/go_router.dart';
@@ -8,7 +25,10 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:chat_kare/features/chat/domain/entities/chats_entity.dart';
 
+/// Message input widget for chat screen
+/// Handles text input, media attachments, and message actions
 class ChatInputWidget extends StatefulWidget {
+  /// Controller managing chat state and message operations
   final ChatController controller;
 
   const ChatInputWidget({super.key, required this.controller});
@@ -18,9 +38,12 @@ class ChatInputWidget extends StatefulWidget {
 }
 
 class _ChatInputWidgetState extends State<ChatInputWidget> {
+  /// Builds the input widget with reactive state management
+  /// Displays different UI based on editing or reply mode
   @override
   Widget build(BuildContext context) {
     return Obx(() {
+      // Check current input mode
       final isEditing = widget.controller.editingMessageId.value != null;
       final replyMessage = widget.controller.replyMessage.value;
       final isReplying = replyMessage != null;
@@ -32,10 +55,13 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            // Show editing preview if in edit mode
             if (isEditing)
               _buildEditingPreview()
+            // Show reply preview if replying to a message
             else if (isReplying)
               _buildReplyPreview(replyMessage),
+            // Always show input row
             _buildInputRow(isEditing),
           ],
         ),
@@ -43,6 +69,8 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
     });
   }
 
+  /// Builds the editing preview banner
+  /// Shows the original message text being edited with a close button
   Widget _buildEditingPreview() {
     return Column(
       children: [
@@ -60,6 +88,7 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
             alignment: Alignment.centerRight,
             child: Row(
               children: [
+                // Cancel editing button
                 IconButton(
                   icon: const Icon(Icons.close, size: 20, color: Colors.grey),
                   onPressed: widget.controller.cancelEditing,
@@ -67,6 +96,7 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
                   constraints: const BoxConstraints(),
                 ),
                 Spacer(),
+                // Original message preview
                 Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 18,
@@ -96,6 +126,11 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
     );
   }
 
+  /// Builds the reply preview banner
+  /// Shows the message being replied to with sender name and text
+  ///
+  /// Parameters:
+  /// - [replyMessage]: The message entity being replied to
   Widget _buildReplyPreview(ChatsEntity replyMessage) {
     return AnimatedContainer(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -118,11 +153,13 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // Sender name ("You" or contact name)
                     Text(
                       replyMessage.receiverName == widget.controller.contact.uid
                           ? 'You'
                           : replyMessage.receiverName,
                       style: TextStyle(
+                        // Blue for contact, green for current user
                         color:
                             replyMessage.senderId ==
                                 widget.controller.contact.uid
@@ -132,6 +169,7 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
                         fontSize: 12,
                       ),
                     ),
+                    // Message text preview
                     Text(
                       replyMessage.text,
                       maxLines: 1,
@@ -140,6 +178,7 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
                   ],
                 ),
               ),
+              // Cancel reply button
               IconButton(
                 icon: const Icon(Icons.close, size: 20, color: Colors.grey),
                 onPressed: widget.controller.cancelReply,
@@ -153,10 +192,20 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
     );
   }
 
+  /// Builds the main input row with text field and action buttons
+  ///
+  /// Features:
+  /// - Attachment menu (camera, gallery, video, documents, location)
+  /// - Text input field with emoji picker
+  /// - Dynamic send/voice button based on text presence
+  /// - Typing indicator trigger
+  ///
+  /// Parameters:
+  /// - [isEditing]: Whether currently in editing mode (changes send icon to check)
   Widget _buildInputRow(bool isEditing) {
     return Row(
       children: [
-        // Attachment button
+        // Attachment menu button
         PopupMenuButton<String>(
           icon: const Icon(Icons.attach_file),
           onSelected: (value) => _handleAttachment(value),
@@ -224,7 +273,7 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
           ],
         ),
 
-        // Message input field
+        // Text input field container
         Expanded(
           child: Container(
             margin: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
@@ -237,20 +286,25 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
                 Expanded(
                   child: AppTextFormField(
                     controller: widget.controller.messageController,
+                    textCapitalization: TextCapitalization.sentences,
                     hint: "Type message...",
                     borderRadius: 14,
                     minLines: 1,
                     maxLines: 2,
                     keyboardType: TextInputType.multiline,
                     textInputAction: TextInputAction.newline,
+                    // Trigger typing indicator on text change
                     onChanged: (text) {
                       widget.controller.onTextChanged(text);
                     },
+                    // Emoji picker button
                     prefixIcon: IconButton(
                       icon: const Icon(Icons.emoji_emotions_outlined),
                       onPressed: _showEmojiPicker,
                     ),
+                    // Dynamic suffix button (send or voice)
                     suffixIcon: Obx(() {
+                      // Show send button if there's text or in editing mode
                       if (widget.controller.hasText.value || isEditing) {
                         return IconButton(
                           icon: Icon(
@@ -261,7 +315,9 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
                             widget.controller.sendMessage();
                           },
                         );
-                      } else {
+                      }
+                      // Show voice recording button if no text
+                      else {
                         return IconButton(
                           icon: const Icon(Icons.mic, color: Colors.grey),
                           onPressed: _startVoiceRecording,
@@ -278,12 +334,27 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
     );
   }
 
+  /// Shows emoji picker dialog
+  /// TODO: Implement emoji picker functionality
   void _showEmojiPicker() {
     // Implement emoji picker
   }
 
+  /// Handles attachment selection from popup menu
+  ///
+  /// Supported attachment types:
+  /// - camera: Take photo with camera
+  /// - gallery: Pick image from gallery
+  /// - cameraVideo: Record video with camera
+  /// - galleryVideo: Pick video from gallery
+  /// - document: Pick document file
+  /// - location: Share current location
+  ///
+  /// For media files, navigates to preview screen before sending
   void _handleAttachment(String type) async {
     Map<String, dynamic>? result;
+
+    // Handle different attachment types
     switch (type) {
       case 'camera':
         result = await widget.controller.takePhoto();
@@ -301,16 +372,19 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
         result = await widget.controller.pickDocument();
         break;
       case 'location':
+        // Location sharing doesn't need preview
         widget.controller.shareLocation();
         break;
     }
 
+    // Navigate to media preview screen if media was selected
     if (result != null && mounted) {
       context.pushNamed(
         AppRoutes.mediaPreview.name,
         extra: {
           'file': result['file'],
           'type': result['type'],
+          // Callback to send media with caption
           'onSend': (String caption) {
             widget.controller.sendMediaMessage(
               result!['file'],
@@ -323,6 +397,8 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
     }
   }
 
+  /// Starts voice recording for voice messages
+  /// TODO: Implement voice recording functionality
   void _startVoiceRecording() {
     // Implement voice recording
   }
