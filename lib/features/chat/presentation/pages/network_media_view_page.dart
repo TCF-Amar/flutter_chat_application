@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:chat_kare/features/chat/domain/entities/chats_entity.dart';
 import 'package:chat_kare/features/shared/widgets/app_scaffold.dart';
@@ -32,7 +33,14 @@ class _NetworkMediaViewPageState extends State<NetworkMediaViewPage> {
   }
 
   Future<void> _initializeVideo() async {
-    _videoController = VideoPlayerController.networkUrl(Uri.parse(widget.url));
+    if (widget.url.startsWith('http')) {
+      _videoController = VideoPlayerController.networkUrl(
+        Uri.parse(widget.url),
+      );
+    } else {
+      _videoController = VideoPlayerController.file(File(widget.url));
+    }
+
     await _videoController!.initialize();
     _videoController!.addListener(() {
       if (mounted) {
@@ -101,7 +109,7 @@ class _NetworkMediaViewPageState extends State<NetworkMediaViewPage> {
         children: [
           AspectRatio(
             aspectRatio: _videoController!.value.aspectRatio,
-            child: VideoPlayer(_videoController!,),
+            child: VideoPlayer(_videoController!),
           ),
           if (_isControlVisible)
             Container(

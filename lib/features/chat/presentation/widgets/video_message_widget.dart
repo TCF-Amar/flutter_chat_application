@@ -4,6 +4,7 @@ import 'package:chat_kare/core/theme/theme_extensions.dart';
 import 'package:chat_kare/features/chat/domain/entities/chats_entity.dart';
 import 'package:chat_kare/features/chat/presentation/widgets/upload_overlay_widgets.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:go_router/go_router.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:video_thumbnail/video_thumbnail.dart';
@@ -16,6 +17,7 @@ import 'package:video_thumbnail/video_thumbnail.dart';
 //* - Failed state with retry
 //* - Play button overlay for successful uploads
 //* - Thumbnail generation and caching
+//* - Video caching (Download once, play forever)
 class VideoMessageWidget extends StatefulWidget {
   final ChatsEntity message;
   final VoidCallback onCancelUpload;
@@ -35,10 +37,14 @@ class VideoMessageWidget extends StatefulWidget {
 class _VideoMessageWidgetState extends State<VideoMessageWidget> {
   String? _thumbnailPath;
   bool _isLoadingThumbnail = true;
+  bool _isDownloaded = false;
+  bool _isDownloadingVideo = false;
+  File? _cachedFile;
 
   @override
   void initState() {
     super.initState();
+    _checkCacheStatus();
     _generateThumbnail();
   }
 
@@ -47,7 +53,63 @@ class _VideoMessageWidgetState extends State<VideoMessageWidget> {
     super.didUpdateWidget(oldWidget);
     if (widget.message.localFilePath != oldWidget.message.localFilePath ||
         widget.message.mediaUrl != oldWidget.message.mediaUrl) {
+      _checkCacheStatus();
       _generateThumbnail();
+    }
+  }
+
+  Future<void> _checkCacheStatus() async {
+    if (widget.message.localFilePath != null &&
+        widget.message.localFilePath!.isNotEmpty) {
+      setState(() {
+        _isDownloaded = true;
+        _cachedFile = File(widget.message.localFilePath!);
+      });
+      return;
+    }
+
+    if (widget.message.mediaUrl != null &&
+        widget.message.mediaUrl!.isNotEmpty) {
+      final fileInfo = await DefaultCacheManager().getFileFromCache(
+        widget.message.mediaUrl!,
+      );
+      if (fileInfo != null && mounted) {
+        setState(() {
+          _isDownloaded = true;
+          _cachedFile = fileInfo.file;
+        });
+      }
+    }
+  }
+
+  Future<void> _downloadVideo() async {
+    if (widget.message.mediaUrl == null) return;
+
+    setState(() {
+      _isDownloadingVideo = true;
+    });
+
+    try {
+      final file = await DefaultCacheManager().getSingleFile(
+        widget.message.mediaUrl!,
+      );
+      if (mounted) {
+        setState(() {
+          _isDownloaded = true;
+          _cachedFile = file;
+          _isDownloadingVideo = false;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error downloading video: $e');
+      if (mounted) {
+        setState(() {
+          _isDownloadingVideo = false;
+        });
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to download video: $e')));
+      }
     }
   }
 
@@ -62,9 +124,17 @@ class _VideoMessageWidgetState extends State<VideoMessageWidget> {
       String? path;
       final tempDir = await getTemporaryDirectory();
 
-      if (widget.message.localFilePath != null &&
+      // Prefer local file/cached file for thumbnail generation if available
+      if (_cachedFile != null) {
+        path = await VideoThumbnail.thumbnailFile(
+          video: _cachedFile!.path,
+          thumbnailPath: tempDir.path,
+          imageFormat: ImageFormat.JPEG,
+          maxHeight: 150,
+          quality: 75,
+        );
+      } else if (widget.message.localFilePath != null &&
           widget.message.localFilePath!.isNotEmpty) {
-        // Generate from local file
         path = await VideoThumbnail.thumbnailFile(
           video: widget.message.localFilePath!,
           thumbnailPath: tempDir.path,
@@ -74,7 +144,6 @@ class _VideoMessageWidgetState extends State<VideoMessageWidget> {
         );
       } else if (widget.message.mediaUrl != null &&
           widget.message.mediaUrl!.isNotEmpty) {
-        // Generate from network URL
         path = await VideoThumbnail.thumbnailFile(
           video: widget.message.mediaUrl!,
           thumbnailPath: tempDir.path,
@@ -91,12 +160,30 @@ class _VideoMessageWidgetState extends State<VideoMessageWidget> {
         });
       }
     } catch (e) {
-      debugPrint('Error generating thumbnail: $e');
+      // debugPrint('Error generating thumbnail: $e'); // Removed as per instruction
       if (mounted) {
         setState(() {
           _isLoadingThumbnail = false;
         });
       }
+    }
+  }
+
+  void _handleTap() {
+    final isUploading = widget.message.status == MessageStatus.uploading;
+    final isFailed = widget.message.status == MessageStatus.failed;
+
+    if (isUploading || isFailed) return;
+
+    if (_isDownloaded && _cachedFile != null) {
+      // Play from local cache
+      context.pushNamed(
+        AppRoutes.networkMediaView.name,
+        extra: {'url': _cachedFile!.path, 'type': MessageType.video},
+      );
+    } else {
+      // Download
+      _downloadVideo();
     }
   }
 
@@ -106,15 +193,7 @@ class _VideoMessageWidgetState extends State<VideoMessageWidget> {
     final isFailed = widget.message.status == MessageStatus.failed;
 
     return GestureDetector(
-      onTap: () {
-        // Navigate to video player for successfully uploaded videos
-        if (!isUploading && !isFailed && widget.message.mediaUrl != null) {
-          context.pushNamed(
-            AppRoutes.networkMediaView.name,
-            extra: {'url': widget.message.mediaUrl, 'type': MessageType.video},
-          );
-        }
-      },
+      onTap: _handleTap,
       child: Stack(
         children: [
           Container(
@@ -135,28 +214,52 @@ class _VideoMessageWidgetState extends State<VideoMessageWidget> {
                     Image.file(
                       File(_thumbnailPath!),
                       fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) =>
-                          _buildPlaceholder(),
+                      errorBuilder: (_, __, ___) => _buildPlaceholder(),
                     )
                   else
                     _buildPlaceholder(),
 
-                  // Play button for ready-to-play videos
-                  if (!_isLoadingThumbnail && widget.message.mediaUrl != null)
-                    Container(
-                      decoration: BoxDecoration(
-                        color: Colors.black.withValues(alpha: 0.4),
-                        shape: BoxShape.circle,
+                  // Overlay Icons (Play vs Download vs loading)
+                  if (!isUploading && !isFailed) ...[
+                    if (_isDownloadingVideo)
+                      Container(
+                        decoration: BoxDecoration(
+                          color: Colors.black.withValues(alpha: 0.4),
+                          shape: BoxShape.circle,
+                        ),
+                        padding: const EdgeInsets.all(8),
+                        child: const CircularProgressIndicator(
+                          color: Colors.white,
+                        ),
+                      )
+                    else if (_isDownloaded)
+                      Container(
+                        decoration: BoxDecoration(
+                          color: Colors.black.withValues(alpha: 0.4),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.play_circle_fill,
+                          size: 50,
+                          color: Colors.white,
+                        ),
+                      )
+                    else
+                      Container(
+                        decoration: BoxDecoration(
+                          color: Colors.black.withValues(alpha: 0.4),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.download_rounded,
+                          size: 50,
+                          color: Colors.white,
+                        ),
                       ),
-                      child: const Icon(
-                        Icons.play_circle_fill,
-                        size: 50,
-                        color: Colors.white,
-                      ),
-                    ),
+                  ],
 
-                  // Loading indicator for thumbnail
-                  if (_isLoadingThumbnail)
+                  // Loading indicator for thumbnail (only if not downloading video)
+                  if (_isLoadingThumbnail && !_isDownloadingVideo)
                     const Center(
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
