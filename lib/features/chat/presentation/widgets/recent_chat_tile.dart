@@ -48,6 +48,8 @@ class RecentChatTile extends StatelessWidget {
             ? "🔉 Audio"
             : chat.lastMessageType == MessageType.document
             ? "📄 Document"
+            : chat.lastMessageType == MessageType.location
+            ? "📍 Location"
             : "",
         fontSize: 12,
         maxLines: 1,
