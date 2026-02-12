@@ -109,13 +109,11 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
   }
 
   /// Shows emoji picker dialog
-  /// TODO: Implement emoji picker functionality
   void _showEmojiPicker() {
     // Implement emoji picker
   }
 
   /// Starts voice recording for voice messages
-  /// TODO: Implement voice recording functionality
   void _startVoiceRecording() {
     // Implement voice recording
   }

@@ -1,6 +1,8 @@
-import 'package:chat_kare/core/routes/app_routes.dart';
+import 'dart:io';
+
+import 'package:chat_kare/features/chat/domain/entities/chats_entity.dart';
+import 'package:chat_kare/features/chat/presentation/pages/media_preview_page.dart';
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 
 //* Popup menu button for media attachments.
 //*
@@ -20,7 +22,7 @@ class AttachmentMenuButton extends StatelessWidget {
   final Future<Map<String, dynamic>?> Function() onPickVideoFromGallery;
   final Future<Map<String, dynamic>?> Function() onPickDocument;
   final VoidCallback onShareLocation;
-
+  
   const AttachmentMenuButton({
     super.key,
     required this.onTakePhoto,
@@ -133,18 +135,24 @@ class AttachmentMenuButton extends StatelessWidget {
 
     // Navigate to media preview screen if media was selected
     if (result != null && context.mounted) {
-      // Extract the onSend callback from result if it exists
+      final file = result['file'] as File;
+      final messageType = result['type'] as MessageType;
+      // Extract the onSend callback from result
       final onSendCallback = result['onSend'];
 
-      context.pushNamed(
-        AppRoutes.mediaPreview.name,
-        extra: {
-          'file': result['file'],
-          'type': result['type'],
-          // Pass the onSend callback if available
-          if (onSendCallback != null) 'onSend': onSendCallback,
-        },
-      );
+      if (onSendCallback != null) {
+        // Use Navigator.push instead of context.pushNamed to preserve the underlying ChatPage
+        // This prevents the "Contact details missing" error when popping back
+        await Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (context) => MediaPreviewPage(
+              file: file,
+              type: messageType,
+              onSend: onSendCallback,
+            ),
+          ),
+        );
+      }
     }
   }
 }

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 class AppColors {
   // Brand colors - Modern, vibrant palette
-  static const Color primary = Color(0xFF10B981); // Emerald green
+  static const Color primary = Color(0xFF0050F7); // Emerald green
   static const Color secondary = Color(0xFF8B5CF6); // Purple
   static const Color accent = Color(0xFF06B6D4); // Cyan
 

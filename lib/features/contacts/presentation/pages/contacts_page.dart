@@ -44,6 +44,7 @@ class ContactsPage extends StatelessWidget {
                         context.push(AppRoutes.addContact.path);
                       },
                       leading: CircleAvatar(
+                        backgroundColor: context.colorScheme.primary,
                         radius: 24,
                         child: Icon(Icons.person_add_alt_1),
                       ),
@@ -108,8 +109,9 @@ class ContactsPage extends StatelessWidget {
                                   );
                                 },
                                 onTap: () {
-                                  context.push(
-                                    AppRoutes.chat.path,
+                                  context.pushNamed(
+                                    AppRoutes.chat.name,
+                                    pathParameters: {'uid': contact.uid},
                                     extra: contact,
                                   );
                                   // AppSnackbar.success(

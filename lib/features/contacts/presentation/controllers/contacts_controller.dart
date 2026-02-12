@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:chat_kare/core/services/firebase_services.dart';
 import 'package:chat_kare/features/auth/domain/entities/user_entity.dart';
 import 'package:chat_kare/features/auth/presentation/controllers/auth_controller.dart';
@@ -58,8 +60,43 @@ class ContactsController extends GetxController {
   final searchController = TextEditingController();
   final searchResults = <UserEntity>[].obs;
   final debounce = Duration(milliseconds: 500);
+  Timer? _debounceTimer;
 
-  void findContacts() {}
+  void findContacts() {
+    _debounceTimer?.cancel();
+    _debounceTimer = Timer(debounce, () {
+      final query = searchController.text.toLowerCase().trim();
+      if (query.isEmpty) {
+        searchResults.clear();
+      } else {
+        final results = _contacts.where((contact) {
+          final nameMatch = contact.displayName
+              .toString()
+              .toLowerCase()
+              .contains(query);
+          final emailMatch = contact.email.toString().toLowerCase().contains(
+            query,
+          );
+          final phoneMatch = contact.phoneNumber.toString().contains(query);
+          return nameMatch || emailMatch || phoneMatch;
+        }).toList();
+
+        // Sort results: matches starting with query come first
+        results.sort((a, b) {
+          final aName = a.displayName.toString().toLowerCase();
+          final bName = b.displayName.toString().toLowerCase();
+          final aStarts = aName.startsWith(query);
+          final bStarts = bName.startsWith(query);
+
+          if (aStarts && !bStarts) return -1;
+          if (!aStarts && bStarts) return 1;
+          return aName.compareTo(bName);
+        });
+
+        searchResults.assignAll(results);
+      }
+    });
+  }
 
   Future<void> fetchContacts() async {
     isLoading.value = true;

@@ -519,7 +519,12 @@ class ChatController extends GetxController {
   Future<Map<String, dynamic>?> takePhoto() async {
     final file = await MediaPicker.instance.pickImageFromCamera();
     if (file != null) {
-      return {'file': file, 'type': MessageType.image};
+      return {
+        'file': file,
+        'type': MessageType.image,
+        'onSend': (String caption) =>
+            sendMediaMessage(file, caption, MessageType.image),
+      };
     }
     return null;
   }
@@ -528,7 +533,12 @@ class ChatController extends GetxController {
     final file = await MediaPicker.instance.pickImageFromGallery();
     if (file != null) {
       log.d(file.path);
-      return {'file': file, 'type': MessageType.image};
+      return {
+        'file': file,
+        'type': MessageType.image,
+        'onSend': (String caption) =>
+            sendMediaMessage(file, caption, MessageType.image),
+      };
     }
     return null;
   }
@@ -536,7 +546,12 @@ class ChatController extends GetxController {
   Future<Map<String, dynamic>?> pickDocument() async {
     final file = await MediaPicker.instance.pickDocument();
     if (file != null) {
-      return {'file': file, 'type': MessageType.document};
+      return {
+        'file': file,
+        'type': MessageType.document,
+        'onSend': (String caption) =>
+            sendMediaMessage(file, caption, MessageType.document),
+      };
     }
     return null;
   }
@@ -545,7 +560,12 @@ class ChatController extends GetxController {
     final file = await MediaPicker.instance.pickVideoFromGallery();
     if (file != null) {
       log.d(file.path);
-      return {'file': file, 'type': MessageType.video};
+      return {
+        'file': file,
+        'type': MessageType.video,
+        'onSend': (String caption) =>
+            sendMediaMessage(file, caption, MessageType.video),
+      };
     }
     return null;
   }
@@ -554,7 +574,12 @@ class ChatController extends GetxController {
     final file = await MediaPicker.instance.pickVideoFromCamera();
     if (file != null) {
       log.d(file.path);
-      return {'file': file, 'type': MessageType.video};
+      return {
+        'file': file,
+        'type': MessageType.video,
+        'onSend': (String caption) =>
+            sendMediaMessage(file, caption, MessageType.video),
+      };
     }
     return null;
   }

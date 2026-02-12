@@ -27,7 +27,7 @@ class AppRoutes {
     name: 'profileComplete',
     path: '/profileComplete',
   );
-  static final RouteModels chat = RouteModels(name: 'chat', path: '/chat');
+  static final RouteModels chat = RouteModels(name: 'chat', path: '/chat/:uid');
   static final RouteModels mediaPreview = RouteModels(
     name: 'mediaPreview',
     path: '/mediaPreview',

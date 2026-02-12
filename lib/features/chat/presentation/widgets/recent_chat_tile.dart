@@ -19,7 +19,11 @@ class RecentChatTile extends StatelessWidget {
     return ListTile(
       onTap: () {
         final contact = controller.getContactFromChat(chat);
-        context.pushNamed(AppRoutes.chat.name, extra: contact);
+        context.pushNamed(
+          AppRoutes.chat.name,
+          pathParameters: {'uid': contact.uid},
+          extra: contact,
+        );
       },
       leading: CircleAvatar(
         radius: 24,

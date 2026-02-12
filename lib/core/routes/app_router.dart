@@ -2,7 +2,6 @@ import 'package:chat_kare/core/services/auth_state_notifier.dart';
 import 'package:chat_kare/features/auth/domain/entities/user_entity.dart';
 
 import 'package:chat_kare/features/chat/presentation/pages/chat_page.dart';
-import 'package:chat_kare/features/contacts/domain/entities/contact_entity.dart';
 import 'package:chat_kare/features/profile/presentation/pages/profile_complete_page.dart';
 import 'package:chat_kare/features/profile/presentation/pages/profile_page.dart';
 import 'package:chat_kare/features/auth/presentation/pages/signin_page.dart';
@@ -10,15 +9,15 @@ import 'package:chat_kare/features/auth/presentation/pages/signup_page.dart';
 import 'package:chat_kare/features/contacts/presentation/pages/add_contact.dart';
 import 'package:chat_kare/features/home/presentation/pages/home_page.dart';
 import 'package:chat_kare/features/shared/pages/splash_screen.dart';
+import 'package:chat_kare/features/contacts/presentation/controllers/contacts_controller.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:go_router/go_router.dart';
 import 'package:chat_kare/core/routes/app_routes.dart';
-import 'package:chat_kare/features/chat/presentation/controllers/chat_controller.dart';
 import 'dart:io';
 import 'package:chat_kare/features/chat/domain/entities/chats_entity.dart';
 import 'package:chat_kare/features/chat/presentation/pages/media_preview_page.dart';
 import 'package:chat_kare/features/chat/presentation/pages/network_media_view_page.dart';
-import 'package:get/get.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
@@ -111,19 +110,32 @@ class AppRouter {
           name: AppRoutes.chat.name,
           path: AppRoutes.chat.path,
           builder: (context, state) {
-            if (state.extra == null || state.extra is! UserEntity) {
-              return const Scaffold(
-                body: Center(child: Text('Error: Contact details missing')),
-              );
+            // Try to get contact from extra first
+            if (state.extra != null && state.extra is UserEntity) {
+              return ChatPage(contact: state.extra as UserEntity);
             }
-            final contact = state.extra as UserEntity;
-            Get.lazyPut(
-              () => ChatController(
-                contact: contact,
-                authStateNotifier: Get.find(),
-              ),
+
+            // Fallback: Get UID from path parameters
+            final uid = state.pathParameters['uid'];
+            if (uid != null) {
+              // Try to find contact in ContactsController
+              try {
+                if (Get.isRegistered<ContactsController>()) {
+                  final contact = Get.find<ContactsController>()
+                      .getContactByUid(uid);
+                  if (contact != null) {
+                    return ChatPage(contact: contact);
+                  }
+                }
+              } catch (e) {
+                // Controller might not be ready
+              }
+            }
+
+            // If we still can't find the contact, show error
+            return const Scaffold(
+              body: Center(child: Text('Error: Contact details missing')),
             );
-            return ChatPage(contact: contact);
           },
         ),
         GoRoute(

@@ -58,7 +58,7 @@ class AppColorScheme extends ThemeExtension<AppColorScheme> {
   // Factory constructor for light theme
   factory AppColorScheme.light() {
     return const AppColorScheme(
-      primary: Color(0xFF10B981),
+      primary: Color(0xFF0050F5),
       secondary: Color(0xFF8B5CF6),
       accent: Color(0xFF06B6D4),
       background: Color(0xFFFFFFFF),
@@ -84,7 +84,7 @@ class AppColorScheme extends ThemeExtension<AppColorScheme> {
   // Factory constructor for dark theme
   factory AppColorScheme.dark() {
     return const AppColorScheme(
-      primary: Color(0xFF10B981),
+      primary: Color(0xFF0050F5),
       secondary: Color(0xFF8B5CF6),
       accent: Color(0xFF06B6D4),
       background: Color(0xFF0F172A),
