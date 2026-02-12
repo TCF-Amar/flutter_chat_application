@@ -1,8 +1,11 @@
+import 'dart:io' as java_io;
 import 'package:chat_kare/core/services/auth_state_notifier.dart';
 import 'package:chat_kare/core/services/notification_services.dart';
+import 'package:chat_kare/core/utils/cloudinary_utils.dart';
 import 'package:chat_kare/features/auth/domain/entities/user_entity.dart';
 import 'package:chat_kare/features/auth/domain/usecases/auth_usecase.dart';
 import 'package:chat_kare/features/auth/presentation/controllers/auth_controller.dart';
+import 'package:chat_kare/features/shared/widgets/app_snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:logger/logger.dart';
@@ -101,26 +104,53 @@ class ProfileController extends GetxController {
         await _authStateNotifier.fetchUserProfile(user.uid);
         _currentUser.value = user;
         _isEditMode.value = false;
-        Get.snackbar(
-          'Success',
-          'Profile updated successfully',
-          backgroundColor: Colors.green,
-          colorText: Colors.white,
-        );
+        AppSnackbar.success(message: 'Profile updated successfully');
       },
     );
     _isLoading.value = false;
   }
 
-  /// Update profile photo
-  Future<void> updateProfilePhoto() async {
-    // TODO: Implement photo picker and upload
-    Get.snackbar(
-      'Info',
-      'Photo upload feature coming soon',
-      backgroundColor: Colors.blue,
-      colorText: Colors.white,
-    );
+  Future<void> uploadProfilePhoto(java_io.File file) async {
+    _isLoading.value = true;
+    try {
+      final result = await CloudinaryUtils.uploadFile(file: file);
+
+      if (result['success'] == true) {
+        final photoUrl = result['url'];
+
+        // Update user profile with new photo URL
+        if (_currentUser.value != null) {
+          final updatedUser = _currentUser.value!.copyWith(photoUrl: photoUrl);
+          _logger.i('Updated user: $updatedUser');
+
+          final updateResult = await _authUsecase.updateUser(updatedUser);
+
+          updateResult.fold(
+            (failure) {
+              AppSnackbar.error(
+                message: 'Failed to update profile: ${failure.message}',
+              );
+            },
+            (user) async {
+              await _authStateNotifier.fetchUserProfile(user.uid);
+              _currentUser.value = user;
+              AppSnackbar.success(
+                message: 'Profile photo updated successfully',
+              );
+            },
+          );
+        }
+      } else {
+        AppSnackbar.error(
+          message: 'Failed to upload photo: ${result['error']}',
+        );
+      }
+    } catch (e) {
+      _logger.e('Error uploading photo: $e');
+      AppSnackbar.error(message: 'Something went wrong');
+    } finally {
+      _isLoading.value = false;
+    }
   }
 
   Future<void> completeProfile() async {

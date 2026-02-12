@@ -72,9 +72,17 @@ class DocumentMessageWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () async {
-        final uri = Uri.parse(message.mediaUrl ?? '');
-        if (await canLaunchUrl(uri)) {
-          await launchUrl(uri);
+        if (message.mediaUrl == null || message.mediaUrl!.isEmpty) return;
+        final uri = Uri.parse(message.mediaUrl!);
+        try {
+          if (await canLaunchUrl(uri)) {
+            await launchUrl(uri, mode: LaunchMode.externalApplication);
+          } else {
+            // Try launching directly if canLaunch returns false (some devices/schemes)
+            await launchUrl(uri, mode: LaunchMode.externalApplication);
+          }
+        } catch (e) {
+          debugPrint('Error launching url: $e');
         }
       },
       child: Row(

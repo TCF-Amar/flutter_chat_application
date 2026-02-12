@@ -190,10 +190,15 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
           .get();
 
       if (exist.docs.isNotEmpty) {
-        _logger.e(
-          'DataSource: User already exists with phone number: $phoneNumber',
-        );
-        throw Exception('User already exists with phone number: $phoneNumber');
+        final existingUserDoc = exist.docs.first;
+        if (existingUserDoc.id != user.uid) {
+          _logger.e(
+            'DataSource: User already exists with phone number: $phoneNumber',
+          );
+          throw Exception(
+            'User already exists with phone number: $phoneNumber',
+          );
+        }
       }
 
       await fs.firestore.collection('users').doc(user.uid).update(user.toMap());

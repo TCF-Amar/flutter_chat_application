@@ -45,7 +45,11 @@ class AddContact extends StatelessWidget {
                       ? "Email"
                       : "Phone Number",
                   keyboardType: controller.textInputType.value,
-                  maxLength: 10,
+                  maxLength:
+                      controller.textInputType.value ==
+                          controller.inputTypeEmail
+                      ? null
+                      : 10,
                   suffixIcon: IconButton(
                     icon:
                         controller.textInputType.value ==

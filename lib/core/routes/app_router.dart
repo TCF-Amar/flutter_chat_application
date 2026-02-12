@@ -10,6 +10,7 @@ import 'package:chat_kare/features/contacts/presentation/pages/add_contact.dart'
 import 'package:chat_kare/features/home/presentation/pages/home_page.dart';
 import 'package:chat_kare/features/shared/pages/splash_screen.dart';
 import 'package:chat_kare/features/contacts/presentation/controllers/contacts_controller.dart';
+import 'package:chat_kare/features/chat/presentation/controllers/chat_list_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:go_router/go_router.dart';
@@ -110,7 +111,7 @@ class AppRouter {
           name: AppRoutes.chat.name,
           path: AppRoutes.chat.path,
           builder: (context, state) {
-            // Try to get contact from extra first
+            // 1. Try to get contact from extra (Fastest)
             if (state.extra != null && state.extra is UserEntity) {
               return ChatPage(contact: state.extra as UserEntity);
             }
@@ -118,7 +119,7 @@ class AppRouter {
             // Fallback: Get UID from path parameters
             final uid = state.pathParameters['uid'];
             if (uid != null) {
-              // Try to find contact in ContactsController
+              // 2. Try to find contact in ContactsController (Fast)
               try {
                 if (Get.isRegistered<ContactsController>()) {
                   final contact = Get.find<ContactsController>()
@@ -130,9 +131,47 @@ class AppRouter {
               } catch (e) {
                 // Controller might not be ready
               }
+
+              // 3. Try to find in ChatListController active chats (Fast)
+              try {
+                if (Get.isRegistered<ChatListController>()) {
+                  final chatController = Get.find<ChatListController>();
+                  // Check loaded chats
+                  final chat = chatController.chats.firstWhereOrNull(
+                    (c) => c.receiverId == uid,
+                  );
+                  if (chat != null) {
+                    return ChatPage(
+                      contact: chatController.getContactFromChat(chat),
+                    );
+                  }
+
+                  // 4. Async Fetch from Server (Slow but guaranteed)
+                  return FutureBuilder<UserEntity?>(
+                    future: chatController.getUserDetails(uid),
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const Scaffold(
+                          body: Center(child: CircularProgressIndicator()),
+                        );
+                      }
+
+                      if (snapshot.hasData && snapshot.data != null) {
+                        return ChatPage(contact: snapshot.data!);
+                      }
+
+                      return const Scaffold(
+                        body: Center(child: Text('Error: Contact not found')),
+                      );
+                    },
+                  );
+                }
+              } catch (e) {
+                // Controller might not be ready
+              }
             }
 
-            // If we still can't find the contact, show error
+            // If we still can't find the contact and no async fetch possible
             return const Scaffold(
               body: Center(child: Text('Error: Contact details missing')),
             );
