@@ -197,9 +197,31 @@ class ContactsRepositoryImpl extends ContactsRepository {
   //* Removes a contact from current user's contact list
   //*
   //* Returns Right(null) on success, Left(Failure) on error.
-  Future<Result<void>> removeContact(String contactId) async {
+  @override
+  Future<Result<void>> deleteContact(String contactId) async {
     try {
       await remoteDataSource.removeContact(contactId);
+      return const Right(null);
+    } on FirebaseException catch (e) {
+      return Left(mapExceptionToFailure(e));
+    } catch (e) {
+      return Left(mapExceptionToFailure(Exception(e.toString())));
+    }
+  }
+
+  //* Updates a contact's details (currently only name)
+  //*
+  //* Returns Right(null) on success, Left(Failure) on error.
+  @override
+  Future<Result<void>> updateContact(ContactEntity entity) async {
+    try {
+      // Update name if changed
+      if (entity.name.isNotEmpty) {
+        await remoteDataSource.updateContactName(
+          entity.contactUid,
+          entity.name,
+        );
+      }
       return const Right(null);
     } on FirebaseException catch (e) {
       return Left(mapExceptionToFailure(e));

@@ -170,12 +170,34 @@ class ContactsController extends GetxController {
     return isSuccess;
   }
 
-  Future<bool> updateContact() async {
-    return false;
+  Future<void> updateContact(ContactEntity contact) async {
+    isUpdating.value = true;
+    final result = await usecase.updateContact(contact);
+    result.fold(
+      (failure) {
+        AppSnackbar.error(message: failure.message);
+      },
+      (success) {
+        AppSnackbar.success(message: "Contact updated successfully");
+        fetchContacts();
+      },
+    );
+    isUpdating.value = false;
   }
 
-  Future<bool> deleteContact() async {
-    return false;
+  Future<void> deleteContact(String uid) async {
+    isDeleting.value = true;
+    final result = await usecase.deleteContact(uid);
+    result.fold(
+      (failure) {
+        AppSnackbar.error(message: failure.message);
+      },
+      (success) {
+        AppSnackbar.success(message: "Contact deleted successfully");
+        fetchContacts();
+      },
+    );
+    isDeleting.value = false;
   }
 
   Future<void> refreshContacts() async {

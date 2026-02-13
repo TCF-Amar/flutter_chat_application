@@ -1,6 +1,7 @@
 import 'package:chat_kare/core/routes/app_routes.dart';
 import 'package:chat_kare/core/services/firebase_services.dart';
 import 'package:chat_kare/core/theme/theme_extensions.dart';
+import 'package:chat_kare/features/contacts/domain/entities/contact_entity.dart';
 import 'package:chat_kare/features/contacts/presentation/controllers/contacts_controller.dart';
 import 'package:chat_kare/features/shared/widgets/app_scaffold.dart';
 import 'package:chat_kare/features/shared/widgets/app_snackbar.dart';
@@ -87,7 +88,7 @@ class ContactsPage extends StatelessWidget {
                                       return AlertDialog(
                                         title: const AppText("Delete Contact"),
                                         content: const AppText(
-                                          "Are you sure you want to delete this contact?",
+                                          "Choose an action for this contact",
                                         ),
                                         actions: [
                                           TextButton(
@@ -98,10 +99,73 @@ class ContactsPage extends StatelessWidget {
                                           ),
                                           TextButton(
                                             onPressed: () {
-                                              controller.deleteContact();
                                               context.pop();
+                                              // Show edit dialog
+                                              final editController =
+                                                  TextEditingController(
+                                                    text: contact.displayName,
+                                                  );
+                                              showDialog(
+                                                context: context,
+                                                builder: (context) {
+                                                  return AlertDialog(
+                                                    title: const AppText(
+                                                      "Edit Contact Name",
+                                                    ),
+                                                    content: AppTextFormField(
+                                                      controller:
+                                                          editController,
+                                                      hint: "Name",
+                                                    ),
+                                                    actions: [
+                                                      TextButton(
+                                                        onPressed: () {
+                                                          context.pop();
+                                                        },
+                                                        child: const AppText(
+                                                          "Cancel",
+                                                        ),
+                                                      ),
+                                                      TextButton(
+                                                        onPressed: () {
+                                                          context.pop();
+                                                          controller.updateContact(
+                                                            ContactEntity(
+                                                              contactUid:
+                                                                  contact.uid,
+                                                              name:
+                                                                  editController
+                                                                      .text
+                                                                      .trim(),
+                                                              email:
+                                                                  contact.email,
+                                                              phoneNumber: contact
+                                                                  .phoneNumber,
+                                                            ),
+                                                          );
+                                                        },
+                                                        child: const AppText(
+                                                          "Save",
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  );
+                                                },
+                                              );
                                             },
-                                            child: const AppText("Delete"),
+                                            child: const AppText("Edit"),
+                                          ),
+                                          TextButton(
+                                            onPressed: () {
+                                              context.pop();
+                                              controller.deleteContact(
+                                                contact.uid,
+                                              );
+                                            },
+                                            child: const AppText(
+                                              "Delete",
+                                              color: Colors.red,
+                                            ),
                                           ),
                                         ],
                                       );

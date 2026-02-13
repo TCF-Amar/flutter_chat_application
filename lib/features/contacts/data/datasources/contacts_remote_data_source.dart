@@ -63,6 +63,9 @@ abstract class ContactsRemoteDataSource {
 
   //* Update contact starred status
   Future<void> updateContactStar(String contactId, bool stared);
+
+  //* Update contact name
+  Future<void> updateContactName(String contactId, String newName);
 }
 
 //* Firebase implementation of contacts data source
@@ -246,5 +249,16 @@ class ContactsRemoteDataSourceImpl implements ContactsRemoteDataSource {
         .collection('contacts')
         .doc(contactId)
         .update({'starred': starred});
+  }
+
+  //* Updates contact's name
+  @override
+  Future<void> updateContactName(String contactId, String newName) async {
+    await fs.firestore
+        .collection('users')
+        .doc(fs.auth.currentUser?.uid)
+        .collection('contacts')
+        .doc(contactId)
+        .update({'name': newName});
   }
 }

@@ -15,4 +15,12 @@ class ContactsUsecase {
   Future<Result<List<UserEntity>>> getContacts() async {
     return await repository.getContacts();
   }
+
+  Future<Result<void>> deleteContact(String uid) async {
+    return await repository.deleteContact(uid);
+  }
+
+  Future<Result<void>> updateContact(ContactEntity entity) async {
+    return await repository.updateContact(entity);
+  }
 }
