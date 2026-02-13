@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:chat_kare/core/routes/app_routes.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:chat_kare/core/theme/theme_extensions.dart';
 import 'package:chat_kare/features/chat/domain/entities/chats_entity.dart';
 import 'package:chat_kare/features/chat/presentation/widgets/upload_overlay_widgets.dart';
@@ -68,11 +69,9 @@ class _VideoMessageWidgetState extends State<VideoMessageWidget> {
       return;
     }
 
-    if (widget.message.mediaUrl != null &&
-        widget.message.mediaUrl!.isNotEmpty) {
-      final fileInfo = await DefaultCacheManager().getFileFromCache(
-        widget.message.mediaUrl!,
-      );
+    final url = widget.message.videoUrl ?? widget.message.mediaUrl;
+    if (url != null && url.isNotEmpty) {
+      final fileInfo = await DefaultCacheManager().getFileFromCache(url);
       if (fileInfo != null && mounted) {
         setState(() {
           _isDownloaded = true;
@@ -83,16 +82,15 @@ class _VideoMessageWidgetState extends State<VideoMessageWidget> {
   }
 
   Future<void> _downloadVideo() async {
-    if (widget.message.mediaUrl == null) return;
+    final url = widget.message.videoUrl ?? widget.message.mediaUrl;
+    if (url == null) return;
 
     setState(() {
       _isDownloadingVideo = true;
     });
 
     try {
-      final file = await DefaultCacheManager().getSingleFile(
-        widget.message.mediaUrl!,
-      );
+      final file = await DefaultCacheManager().getSingleFile(url);
       if (mounted) {
         setState(() {
           _isDownloaded = true;
@@ -115,6 +113,13 @@ class _VideoMessageWidgetState extends State<VideoMessageWidget> {
 
   Future<void> _generateThumbnail() async {
     if (!mounted) return;
+
+    // If we have a separate videoUrl, then mediaUrl is the thumbnail.
+    // We don't need to generate a local thumbnail file if we can just use the URL.
+    if (widget.message.videoUrl != null && widget.message.mediaUrl != null) {
+      // We will handle this in build method by checking mediaUrl directly
+      return;
+    }
 
     setState(() {
       _isLoadingThumbnail = true;
@@ -160,7 +165,6 @@ class _VideoMessageWidgetState extends State<VideoMessageWidget> {
         });
       }
     } catch (e) {
-      // debugPrint('Error generating thumbnail: $e'); // Removed as per instruction
       if (mounted) {
         setState(() {
           _isLoadingThumbnail = false;
@@ -215,6 +219,14 @@ class _VideoMessageWidgetState extends State<VideoMessageWidget> {
                       File(_thumbnailPath!),
                       fit: BoxFit.cover,
                       errorBuilder: (_, __, ___) => _buildPlaceholder(),
+                    )
+                  else if (widget.message.videoUrl != null &&
+                      widget.message.mediaUrl != null)
+                    CachedNetworkImage(
+                      imageUrl: widget.message.mediaUrl!,
+                      fit: BoxFit.cover,
+                      placeholder: (_, __) => _buildPlaceholder(),
+                      errorWidget: (_, __, ___) => _buildPlaceholder(),
                     )
                   else
                     _buildPlaceholder(),

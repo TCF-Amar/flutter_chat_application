@@ -84,21 +84,39 @@ class DocumentMessageWidget extends StatelessWidget {
         } catch (e) {
           debugPrint('Error launching url: $e');
         }
-      },
-      child: Row(
+      }, 
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            Icons.insert_drive_file,
-            color: isMe ? Colors.white : Colors.grey,
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.insert_drive_file,
+                color: isMe ? Colors.white : Colors.grey,
+              ),
+              const SizedBox(width: 8),
+              Flexible(
+                child: Text(
+                  message.documentName ?? 'Document',
+                  style: TextStyle(
+                    color: isMe ? Colors.white : Colors.black,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
           ),
-          const SizedBox(width: 8),
-          Flexible(
-            child: Text(
-              message.text.isNotEmpty ? message.text : 'Document',
-              style: TextStyle(color: isMe ? Colors.white : Colors.black),
+          if (message.text.isNotEmpty) ...[
+            const SizedBox(height: 4),
+            Text(
+              message.text,
+              style: TextStyle(color: isMe ? Colors.white70 : Colors.black87),
             ),
-          ),
+          ],
         ],
       ),
     );

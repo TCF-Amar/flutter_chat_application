@@ -1,5 +1,7 @@
 import 'dart:async';
 import 'dart:io';
+import 'package:video_thumbnail/video_thumbnail.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:chat_kare/core/services/firebase_services.dart';
 import 'package:chat_kare/core/utils/cloudinary_utils.dart';
 import 'package:chat_kare/core/utils/media_picker.dart';
@@ -748,8 +750,11 @@ class ChatController extends GetxController {
 
     final messageId = DateTime.now().millisecondsSinceEpoch.toString();
     final replyTo = replyMessage.value;
+    final documentName = type == MessageType.document
+        ? file.path.split('/').last
+        : null;
 
-    // Optimistic message (uploading state, with local file path for preview).
+    // Optimistic message
     final message = ChatsEntity(
       id: messageId,
       chatId: chatId,
@@ -770,8 +775,9 @@ class ChatController extends GetxController {
       replyToText: replyTo?.text,
       replyToType: replyTo?.type,
       replyToMediaUrl: replyTo?.mediaUrl,
-      localFilePath: file.path, // Used for preview and retry.
+      localFilePath: file.path,
       uploadProgress: 0.0,
+      documentName: documentName,
     );
 
     cancelReply();
@@ -786,94 +792,97 @@ class ChatController extends GetxController {
     try {
       log.d("Uploading media...");
 
-      // Upload to Cloudinary with progress callback.
-      final uploadResult = await CloudinaryUtils.uploadFile(
-        file: file,
-        isVideo: type == MessageType.video,
-        onProgress: (progress) {
-          // Check if user cancelled the upload.
-          if (uploadCancellations[messageId] == true) {
-            return;
-          }
-          uploadProgress[messageId] = progress;
+      String? mediaUrl;
+      String? videoUrl;
 
-          // Update the optimistic message with current progress.
-          final index = messages.indexWhere((m) => m.id == messageId);
-          if (index != -1) {
-            messages[index] = ChatsEntity(
-              id: message.id,
-              chatId: message.chatId,
-              senderId: message.senderId,
-              receiverId: message.receiverId,
-              senderName: message.senderName,
-              receiverName: message.receiverName,
-              senderPhotoUrl: message.senderPhotoUrl,
-              receiverPhotoUrl: message.receiverPhotoUrl,
-              text: message.text,
-              type: message.type,
-              timestamp: message.timestamp,
-              isRead: message.isRead,
-              readBy: message.readBy,
-              status: MessageStatus.uploading,
-              replyToMessageId: message.replyToMessageId,
-              replyToSenderName: message.replyToSenderName,
-              replyToText: message.replyToText,
-              replyToType: message.replyToType,
-              replyToMediaUrl: message.replyToMediaUrl,
-              localFilePath: message.localFilePath,
-              uploadProgress: progress,
-            );
-          }
-        },
-      );
+      if (type == MessageType.video) {
+        // 1. Generate and upload thumbnail
+        final tempDir = await getTemporaryDirectory();
+        final thumbnailPath = await VideoThumbnail.thumbnailFile(
+          video: file.path,
+          thumbnailPath: tempDir.path,
+          imageFormat: ImageFormat.JPEG,
+          maxHeight: 150,
+          quality: 75,
+        );
 
-      // Handle cancellation.
-      if (uploadCancellations[messageId] == true) {
-        log.d("Upload cancelled by user");
-        messages.removeWhere((m) => m.id == messageId);
-        uploadProgress.remove(messageId);
-        uploadCancellations.remove(messageId);
-        return;
-      }
-
-      // Upload failed.
-      if (uploadResult['success'] != true) {
-        final errorMsg = uploadResult['error'] ?? 'Unknown error';
-        log.e("Upload failed: $errorMsg");
-
-        final index = messages.indexWhere((m) => m.id == messageId);
-        if (index != -1) {
-          messages[index] = ChatsEntity(
-            id: message.id,
-            chatId: message.chatId,
-            senderId: message.senderId,
-            receiverId: message.receiverId,
-            senderName: message.senderName,
-            receiverName: message.receiverName,
-            senderPhotoUrl: message.senderPhotoUrl,
-            receiverPhotoUrl: message.receiverPhotoUrl,
-            text: message.text,
-            type: message.type,
-            timestamp: message.timestamp,
-            isRead: message.isRead,
-            readBy: message.readBy,
-            status: MessageStatus.failed,
-            replyToMessageId: message.replyToMessageId,
-            replyToSenderName: message.replyToSenderName,
-            replyToText: message.replyToText,
-            replyToType: message.replyToType,
-            replyToMediaUrl: message.replyToMediaUrl,
-            localFilePath: message.localFilePath,
-            uploadError: errorMsg,
+        if (thumbnailPath != null) {
+          final thumbResult = await CloudinaryUtils.uploadFile(
+            file: File(thumbnailPath),
+            resourceType: 'image',
           );
+          if (thumbResult['success'] == true) {
+            mediaUrl = thumbResult['url'];
+          }
         }
-        uploadProgress.remove(messageId);
-        return;
+
+        // 2. Upload video
+        final videoResult = await CloudinaryUtils.uploadFile(
+          file: file,
+          isVideo: true,
+          resourceType: 'video',
+          onProgress: (progress) {
+            if (uploadCancellations[messageId] == true) return;
+            uploadProgress[messageId] = progress;
+            _updateOptimisticMessage(messageId, progress: progress);
+          },
+        );
+
+        if (uploadCancellations[messageId] == true) {
+          _handleUploadCancellation(messageId);
+          return;
+        }
+
+        if (videoResult['success'] != true) {
+          throw Exception(videoResult['error']);
+        }
+
+        videoUrl = videoResult['url'];
+      } else if (type == MessageType.document) {
+        // Upload document
+        final result = await CloudinaryUtils.uploadFile(
+          file: file,
+          resourceType: 'raw',
+          onProgress: (progress) {
+            if (uploadCancellations[messageId] == true) return;
+            uploadProgress[messageId] = progress;
+            _updateOptimisticMessage(messageId, progress: progress);
+          },
+        );
+
+        if (uploadCancellations[messageId] == true) {
+          _handleUploadCancellation(messageId);
+          return;
+        }
+
+        if (result['success'] != true) {
+          throw Exception(result['error']);
+        }
+        mediaUrl = result['url'];
+      } else {
+        // Image or generic
+        final result = await CloudinaryUtils.uploadFile(
+          file: file,
+          resourceType: 'image',
+          onProgress: (progress) {
+            if (uploadCancellations[messageId] == true) return;
+            uploadProgress[messageId] = progress;
+            _updateOptimisticMessage(messageId, progress: progress);
+          },
+        );
+
+        if (uploadCancellations[messageId] == true) {
+          _handleUploadCancellation(messageId);
+          return;
+        }
+
+        if (result['success'] != true) {
+          throw Exception(result['error']);
+        }
+        mediaUrl = result['url'];
       }
 
       // Upload succeeded.
-      final mediaUrl = uploadResult['url'];
-      log.d(mediaUrl);
       log.d("Media uploaded successfully");
 
       final index = messages.indexWhere((m) => m.id == messageId);
@@ -899,6 +908,8 @@ class ChatController extends GetxController {
           replyToType: message.replyToType,
           replyToMediaUrl: message.replyToMediaUrl,
           mediaUrl: mediaUrl,
+          videoUrl: videoUrl,
+          documentName: documentName,
           mediaSize: await file.length(),
         );
       }
@@ -907,46 +918,87 @@ class ChatController extends GetxController {
 
       log.d("Sending message...");
       final result = await chatsRepository.sendMessage(messages[index]);
-      result.fold(
-        (failure) {
-          messages.remove(message);
-          errorMessage.value = 'Failed to send message';
-        },
-        (_) {
-          log.d("Message sent successfully");
-        },
-      );
+      result.fold((failure) {
+        messages.remove(message);
+        errorMessage.value = 'Failed to send message';
+      }, (_) => log.d("Message sent successfully"));
     } catch (e) {
       log.e(e);
-      // Mark as failed on exception.
-      final index = messages.indexWhere((m) => m.id == messageId);
-      if (index != -1) {
-        messages[index] = ChatsEntity(
-          id: message.id,
-          chatId: message.chatId,
-          senderId: message.senderId,
-          receiverId: message.receiverId,
-          senderName: message.senderName,
-          receiverName: message.receiverName,
-          senderPhotoUrl: message.senderPhotoUrl,
-          receiverPhotoUrl: message.receiverPhotoUrl,
-          text: message.text,
-          type: message.type,
-          timestamp: message.timestamp,
-          isRead: message.isRead,
-          readBy: message.readBy,
-          status: MessageStatus.failed,
-          replyToMessageId: message.replyToMessageId,
-          replyToSenderName: message.replyToSenderName,
-          replyToText: message.replyToText,
-          replyToType: message.replyToType,
-          replyToMediaUrl: message.replyToMediaUrl,
-          localFilePath: message.localFilePath,
-          uploadError: e.toString(),
-        );
-      }
-      uploadProgress.remove(messageId);
+      _handleUploadFailure(messageId, message, e.toString());
     }
+  }
+
+  void _updateOptimisticMessage(String messageId, {required double progress}) {
+    final index = messages.indexWhere((m) => m.id == messageId);
+    if (index != -1) {
+      final m = messages[index];
+      messages[index] = ChatsEntity(
+        id: m.id,
+        chatId: m.chatId,
+        senderId: m.senderId,
+        receiverId: m.receiverId,
+        senderName: m.senderName,
+        receiverName: m.receiverName,
+        senderPhotoUrl: m.senderPhotoUrl,
+        receiverPhotoUrl: m.receiverPhotoUrl,
+        text: m.text,
+        type: m.type,
+        timestamp: m.timestamp,
+        isRead: m.isRead,
+        readBy: m.readBy,
+        status: m.status,
+        replyToMessageId: m.replyToMessageId,
+        replyToSenderName: m.replyToSenderName,
+        replyToText: m.replyToText,
+        replyToType: m.replyToType,
+        replyToMediaUrl: m.replyToMediaUrl,
+        localFilePath: m.localFilePath,
+        uploadProgress: progress,
+        documentName: m.documentName,
+      );
+    }
+  }
+
+  void _handleUploadCancellation(String messageId) {
+    log.d("Upload cancelled by user");
+    messages.removeWhere((m) => m.id == messageId);
+    uploadProgress.remove(messageId);
+    uploadCancellations.remove(messageId);
+  }
+
+  void _handleUploadFailure(
+    String messageId,
+    ChatsEntity originalMessage,
+    String error,
+  ) {
+    final index = messages.indexWhere((m) => m.id == messageId);
+    if (index != -1) {
+      messages[index] = ChatsEntity(
+        id: originalMessage.id,
+        chatId: originalMessage.chatId,
+        senderId: originalMessage.senderId,
+        receiverId: originalMessage.receiverId,
+        senderName: originalMessage.senderName,
+        receiverName: originalMessage.receiverName,
+        senderPhotoUrl: originalMessage.senderPhotoUrl,
+        receiverPhotoUrl: originalMessage.receiverPhotoUrl,
+        text: originalMessage.text,
+        type: originalMessage.type,
+        timestamp: originalMessage.timestamp,
+        isRead: originalMessage.isRead,
+        readBy: originalMessage.readBy,
+        status: MessageStatus.failed,
+        replyToMessageId: originalMessage.replyToMessageId,
+        replyToSenderName: originalMessage.replyToSenderName,
+        replyToText: originalMessage.replyToText,
+        replyToType: originalMessage.replyToType,
+        replyToMediaUrl: originalMessage.replyToMediaUrl,
+        localFilePath: originalMessage.localFilePath,
+        uploadError: error,
+        documentName: originalMessage.documentName,
+      );
+    }
+    uploadProgress.remove(messageId);
   }
 
   /// Retries a failed upload.

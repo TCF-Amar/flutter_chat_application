@@ -3,7 +3,6 @@ import 'dart:io';
 
 import 'package:http/http.dart' as http;
 import 'package:logger/logger.dart';
-import 'package:path/path.dart' as path;
 
 class CloudinaryUtils {
   static const String uploadPreset = "ml_default";
@@ -14,19 +13,21 @@ class CloudinaryUtils {
   static Future<Map<String, dynamic>> uploadFile({
     required File file,
     bool isVideo = false,
+    String? resourceType, // 'image', 'video', 'raw', 'auto'
     Function(double)? onProgress,
   }) async {
     try {
-      path.basename(file.path);
-      final resourceType = isVideo ? 'video' : 'image';
+      final rType = resourceType ?? (isVideo ? 'video' : 'image');
 
       final url = Uri.parse(
-        'https://api.cloudinary.com/v1_1/$cloudName/$resourceType/upload',
+        'https://api.cloudinary.com/v1_1/$cloudName/$rType/upload',
       );
 
       final request = http.MultipartRequest('POST', url)
         ..fields['upload_preset'] = uploadPreset
-        ..fields['folder'] = isVideo ? "chat_videos" : "chat_images"
+        ..fields['folder'] = isVideo
+            ? "chat_videos"
+            : (rType == 'raw' ? "chat_docs" : "chat_images")
         // ..fields['public_id'] = fileName.split('.').first // Optional: let Cloudinary generate ID or handle collisions
         ..files.add(await http.MultipartFile.fromPath('file', file.path));
 

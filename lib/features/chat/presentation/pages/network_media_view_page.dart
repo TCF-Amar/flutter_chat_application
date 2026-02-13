@@ -4,6 +4,7 @@ import 'package:chat_kare/features/chat/domain/entities/chats_entity.dart';
 import 'package:chat_kare/features/shared/widgets/app_scaffold.dart';
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
+import 'package:chat_kare/features/shared/widgets/enhanced_video_player.dart';
 
 class NetworkMediaViewPage extends StatefulWidget {
   final String url;
@@ -21,8 +22,6 @@ class NetworkMediaViewPage extends StatefulWidget {
 
 class _NetworkMediaViewPageState extends State<NetworkMediaViewPage> {
   VideoPlayerController? _videoController;
-  bool _isPlaying = false;
-  bool _isControlVisible = true;
 
   @override
   void initState() {
@@ -42,13 +41,7 @@ class _NetworkMediaViewPageState extends State<NetworkMediaViewPage> {
     }
 
     await _videoController!.initialize();
-    _videoController!.addListener(() {
-      if (mounted) {
-        setState(() {
-          _isPlaying = _videoController!.value.isPlaying;
-        });
-      }
-    });
+    _videoController!.addListener(() {});
     setState(() {});
     _videoController!.play();
   }
@@ -57,12 +50,6 @@ class _NetworkMediaViewPageState extends State<NetworkMediaViewPage> {
   void dispose() {
     _videoController?.dispose();
     super.dispose();
-  }
-
-  void _toggleControls() {
-    setState(() {
-      _isControlVisible = !_isControlVisible;
-    });
   }
 
   @override
@@ -102,36 +89,10 @@ class _NetworkMediaViewPageState extends State<NetworkMediaViewPage> {
       return const CircularProgressIndicator();
     }
 
-    return GestureDetector(
-      onTap: _toggleControls,
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          AspectRatio(
-            aspectRatio: _videoController!.value.aspectRatio,
-            child: VideoPlayer(_videoController!),
-          ),
-          if (_isControlVisible)
-            Container(
-              color: Colors.black26,
-              child: IconButton(
-                iconSize: 64,
-                icon: Icon(
-                  _isPlaying
-                      ? Icons.pause_circle_filled
-                      : Icons.play_circle_filled,
-                  color: Colors.white,
-                ),
-                onPressed: () {
-                  if (_isPlaying) {
-                    _videoController!.pause();
-                  } else {
-                    _videoController!.play();
-                  }
-                },
-              ),
-            ),
-        ],
+    return Center(
+      child: AspectRatio(
+        aspectRatio: _videoController!.value.aspectRatio,
+        child: EnhancedVideoPlayer(controller: _videoController!),
       ),
     );
   }

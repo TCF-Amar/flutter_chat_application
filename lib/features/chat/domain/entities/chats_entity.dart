@@ -21,6 +21,8 @@ class ChatsEntity {
   final String? replyToText;
   final MessageType? replyToType;
   final String? replyToMediaUrl;
+  final String? videoUrl; // For video file URL
+  final String? documentName; // For document file name
 
   // Upload state tracking
   final double uploadProgress; // 0.0 to 1.0
@@ -50,6 +52,8 @@ class ChatsEntity {
     this.replyToText,
     this.replyToType,
     this.replyToMediaUrl,
+    this.videoUrl,
+    this.documentName,
     this.deletedBy = const [],
     this.isDeletedForEveryone = false,
     this.uploadProgress = 0.0,

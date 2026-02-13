@@ -31,6 +31,8 @@ class ChatsModel extends ChatsEntity {
     super.uploadProgress,
     super.localFilePath,
     super.uploadError,
+    super.videoUrl,
+    super.documentName,
   });
 
   factory ChatsModel.fromJson(Map<String, dynamic> json) {
@@ -65,6 +67,8 @@ class ChatsModel extends ChatsEntity {
       uploadProgress: 0.0,
       localFilePath: null,
       uploadError: null,
+      videoUrl: json["videoUrl"],
+      documentName: json["documentName"],
     );
   }
 
@@ -93,6 +97,8 @@ class ChatsModel extends ChatsEntity {
       "replyToMediaUrl": replyToMediaUrl,
       "deletedBy": deletedBy,
       "isDeletedForEveryone": isDeletedForEveryone,
+      "videoUrl": videoUrl,
+      "documentName": documentName,
       // Note: uploadProgress, localFilePath, uploadError are NOT included
       // They are local-only fields for UI state management
     };
@@ -127,6 +133,8 @@ class ChatsModel extends ChatsEntity {
       uploadProgress: uploadProgress,
       localFilePath: localFilePath,
       uploadError: uploadError,
+      videoUrl: videoUrl,
+      documentName: documentName,
     );
   }
 
@@ -160,6 +168,8 @@ class ChatsModel extends ChatsEntity {
       uploadProgress: entity.uploadProgress,
       localFilePath: entity.localFilePath,
       uploadError: entity.uploadError,
+      videoUrl: entity.videoUrl,
+      documentName: entity.documentName,
     );
   }
 }

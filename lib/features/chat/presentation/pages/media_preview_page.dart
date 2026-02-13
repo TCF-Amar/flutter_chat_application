@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:video_player/video_player.dart';
 import 'package:chat_kare/core/utils/media_picker.dart';
+import 'package:chat_kare/features/shared/widgets/enhanced_video_player.dart';
 
 class MediaPreviewPage extends StatefulWidget {
   final File file;
@@ -157,7 +158,7 @@ class _MediaPreviewPageState extends State<MediaPreviewPage> {
         return Center(
           child: AspectRatio(
             aspectRatio: _videoController!.value.aspectRatio,
-            child: VideoPlayer(_videoController!),
+            child: EnhancedVideoPlayer(controller: _videoController!),
           ),
         );
       } else {

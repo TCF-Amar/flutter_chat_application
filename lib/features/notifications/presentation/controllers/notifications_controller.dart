@@ -81,10 +81,10 @@ class NotificationsController extends GetxController {
           (notifications) async {
             _notifications.value = notifications;
             isLoading.value = false;
-            await NotificationServices.instance.show(
-              title: notifications.last.senderName,
-              body: notifications.last.body,
-            );
+            // await NotificationServices.instance.show(
+            //   title: notifications.last.senderName,
+            //   body: notifications.last.body,
+            // );
           },
         );
       },
