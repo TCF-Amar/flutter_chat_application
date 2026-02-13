@@ -20,8 +20,13 @@ class MainPage extends StatelessWidget {
     final chatListController = Get.find<ChatListController>();
     return AppScaffold(
       appBar: DefaultAppBar(
-        title: "Messages",
-        leading: IconButton(onPressed: () {}, icon: const Icon(Icons.search)),
+        title: "CHATTER",
+        leading: IconButton(
+          onPressed: () {
+            controller.pageController.jumpToPage(3);
+          },
+          icon: const Icon(Icons.search),
+        ),
         actions: [
           PopupMenuButton<String>(
             onSelected: (value) {

@@ -15,7 +15,7 @@ class NotificationsPage extends StatelessWidget {
     final controller = Get.find<NotificationsController>();
 
     return AppScaffold(
-      appBar: DefaultAppBar(title: "Notifications"),
+      appBar: DefaultAppBar(title: "Notifications", centerTitle: false),
       body: RefreshIndicator(
         onRefresh: () async {
           await controller.getNotifications();

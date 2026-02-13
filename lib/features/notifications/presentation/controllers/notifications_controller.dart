@@ -1,4 +1,3 @@
-import 'package:chat_kare/core/services/notification_services.dart';
 import 'package:chat_kare/features/notifications/data/models/notifications_model.dart';
 import 'package:chat_kare/features/shared/widgets/app_snackbar.dart';
 import 'package:get/get.dart';

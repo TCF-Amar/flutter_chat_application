@@ -4,6 +4,7 @@ import 'package:chat_kare/features/chat/presentation/pages/main_page.dart';
 import 'package:chat_kare/features/contacts/presentation/pages/contacts_page.dart';
 import 'package:chat_kare/features/home/presentation/controllers/home_controller.dart';
 import 'package:chat_kare/features/notifications/presentation/pages/notifications_page.dart';
+import 'package:chat_kare/features/calls/presentation/pages/calls_history_page.dart';
 import 'package:chat_kare/features/shared/widgets/index.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -18,7 +19,7 @@ class HomePage extends StatelessWidget {
     final List<Widget> pages = [
       MainPage(),
       NotificationsPage(),
-      const Center(child: Text("Calls")),
+      CallsHistoryPage(),
       ContactsPage(),
     ];
     return Obx(
