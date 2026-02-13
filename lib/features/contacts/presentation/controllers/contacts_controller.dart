@@ -54,7 +54,19 @@ class ContactsController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    fetchContacts();
+    // Listen to user changes to fetch contacts on login and clear on logout
+    ever(authController.rxCurrentUser, (user) {
+      if (user != null) {
+        fetchContacts();
+      } else {
+        _contacts.clear();
+      }
+    });
+
+    // Initial fetch if user is already logged in
+    if (authController.currentUser != null) {
+      fetchContacts();
+    }
   }
 
   final searchController = TextEditingController();

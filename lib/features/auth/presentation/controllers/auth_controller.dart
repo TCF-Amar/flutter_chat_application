@@ -42,6 +42,7 @@ class AuthController extends GetxController {
   //* Reactive current user entity
   final Rx<UserEntity?> _currentUser = Rx<UserEntity?>(null);
   UserEntity? get currentUser => _currentUser.value;
+  Rx<UserEntity?> get rxCurrentUser => _currentUser;
 
   //* Reactive loading state for async operations
   final RxBool _isLoading = RxBool(false);

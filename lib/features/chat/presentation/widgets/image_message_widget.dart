@@ -114,8 +114,8 @@ class ImageMessageWidget extends StatelessWidget {
     if (message.mediaUrl != null) {
       return CachedNetworkImage(
         imageUrl: message.mediaUrl!,
-        width: 250,
-        height: 250,
+        width: 200,
+        // height: 250,
         fit: BoxFit.cover,
         placeholder: (context, url) => Container(
           width: 250,

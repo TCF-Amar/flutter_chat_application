@@ -629,20 +629,11 @@ class ChatController extends GetxController {
   Future<Map<String, dynamic>?> takePhoto() async {
     final file = await MediaPicker.instance.pickImageFromCamera();
     if (file != null) {
-      File? imageFile = file;
-      final context = Get.context;
-      if (context != null && context.mounted) {
-        final edited = await MediaPicker.instance.editImage(context, file);
-        if (edited != null) {
-          imageFile = edited;
-        }
-      }
-
       return {
-        'file': imageFile,
+        'file': file,
         'type': MessageType.image,
-        'onSend': (String caption) =>
-            sendMediaMessage(imageFile!, caption, MessageType.image),
+        'onSend': (File file, String caption) =>
+            sendMediaMessage(file, caption, MessageType.image),
       };
     }
     return null;
@@ -656,20 +647,11 @@ class ChatController extends GetxController {
     if (file != null) {
       log.d(file.path);
 
-      File? imageFile = file;
-      final context = Get.context;
-      if (context != null && context.mounted) {
-        final edited = await MediaPicker.instance.editImage(context, file);
-        if (edited != null) {
-          imageFile = edited;
-        }
-      }
-
       return {
-        'file': imageFile,
+        'file': file,
         'type': MessageType.image,
-        'onSend': (String caption) =>
-            sendMediaMessage(imageFile!, caption, MessageType.image),
+        'onSend': (File file, String caption) =>
+            sendMediaMessage(file, caption, MessageType.image),
       };
     }
     return null;
@@ -684,7 +666,7 @@ class ChatController extends GetxController {
       return {
         'file': file,
         'type': MessageType.document,
-        'onSend': (String caption) =>
+        'onSend': (File file, String caption) =>
             sendMediaMessage(file, caption, MessageType.document),
       };
     }
@@ -701,7 +683,7 @@ class ChatController extends GetxController {
       return {
         'file': file,
         'type': MessageType.video,
-        'onSend': (String caption) =>
+        'onSend': (File file, String caption) =>
             sendMediaMessage(file, caption, MessageType.video),
       };
     }
@@ -718,7 +700,7 @@ class ChatController extends GetxController {
       return {
         'file': file,
         'type': MessageType.video,
-        'onSend': (String caption) =>
+        'onSend': (File file, String caption) =>
             sendMediaMessage(file, caption, MessageType.video),
       };
     }

@@ -5,11 +5,12 @@ import 'package:chat_kare/features/shared/widgets/index.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:video_player/video_player.dart';
+import 'package:chat_kare/core/utils/media_picker.dart';
 
 class MediaPreviewPage extends StatefulWidget {
   final File file;
   final MessageType type;
-  final Function(String caption) onSend;
+  final Function(File file, String caption) onSend;
 
   const MediaPreviewPage({
     super.key,
@@ -25,12 +26,15 @@ class MediaPreviewPage extends StatefulWidget {
 class _MediaPreviewPageState extends State<MediaPreviewPage> {
   final TextEditingController _captionController = TextEditingController();
   VideoPlayerController? _videoController;
+  late File _currentFile;
 
   @override
   void initState() {
     super.initState();
+    _currentFile = widget.file;
+
     if (widget.type == MessageType.video) {
-      _videoController = VideoPlayerController.file(widget.file)
+      _videoController = VideoPlayerController.file(_currentFile)
         ..initialize().then((_) {
           setState(() {}); // Update UI when video is initialized
           _videoController!.play();
@@ -46,6 +50,19 @@ class _MediaPreviewPageState extends State<MediaPreviewPage> {
     super.dispose();
   }
 
+  Future<void> _editImage() async {
+    if (widget.type != MessageType.image) return;
+
+    final edited = await MediaPicker.instance.editImage(context, _currentFile);
+    if (edited != null) {
+      if (mounted) {
+        setState(() {
+          _currentFile = edited;
+        });
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return AppScaffold(
@@ -57,7 +74,11 @@ class _MediaPreviewPageState extends State<MediaPreviewPage> {
           onPressed: () => context.pop(),
         ),
         actions: [
-          // Crop/Edit icons could go here
+          if (widget.type == MessageType.image)
+            IconButton(
+              icon: const Icon(Icons.edit, color: Colors.white),
+              onPressed: _editImage,
+            ),
         ],
       ),
       body: Stack(
@@ -106,7 +127,10 @@ class _MediaPreviewPageState extends State<MediaPreviewPage> {
                     backgroundColor: context.colorScheme.primary,
                     child: const Icon(Icons.send, color: Colors.white),
                     onPressed: () {
-                      widget.onSend(_captionController.text.trim());
+                      widget.onSend(
+                        _currentFile,
+                        _captionController.text.trim(),
+                      );
                       context.pop(); // Close preview after sending
                     },
                   ),
@@ -122,7 +146,8 @@ class _MediaPreviewPageState extends State<MediaPreviewPage> {
   Widget _buildPreviewContent() {
     if (widget.type == MessageType.image) {
       return Image.file(
-        widget.file,
+        _currentFile,
+        key: ValueKey(_currentFile.path),
         fit: BoxFit.contain,
         width: double.infinity,
         height: double.infinity,
@@ -147,7 +172,7 @@ class _MediaPreviewPageState extends State<MediaPreviewPage> {
             const Icon(Icons.insert_drive_file, size: 64, color: Colors.white),
             const SizedBox(height: 16),
             Text(
-              widget.file.path.split('/').last,
+              _currentFile.path.split('/').last,
               // style: context.textTheme.titleMedium?.copyWith(
               //   color: Colors.white,
               // ),

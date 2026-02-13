@@ -110,17 +110,26 @@ class MediaPicker {
       final Uint8List? editedBytes = await Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => ProImageEditor.file(
-            imageFile,
-            callbacks: ProImageEditorCallbacks(
-              onImageEditingComplete: (Uint8List bytes) async {
-                Navigator.pop(context, bytes);
-              },
-              onCloseEditor: (mode) {
-                Navigator.pop(context);
-              },
-            ),
-          ),
+          builder: (context) {
+            bool isPopped = false;
+            return ProImageEditor.file(
+              imageFile,
+              callbacks: ProImageEditorCallbacks(
+                onImageEditingComplete: (Uint8List bytes) async {
+                  if (!isPopped) {
+                    isPopped = true;
+                    Navigator.of(context).pop(bytes);
+                  }
+                },
+                onCloseEditor: (dynamic _) {
+                  if (!isPopped) {
+                    isPopped = true;
+                    Navigator.of(context).pop(null);
+                  }
+                },
+              ),
+            );
+          },
         ),
       );
 

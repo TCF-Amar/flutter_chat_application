@@ -3,12 +3,15 @@ import 'package:chat_kare/features/notifications/data/models/notifications_model
 import 'package:chat_kare/features/shared/widgets/app_snackbar.dart';
 import 'package:get/get.dart';
 import 'package:chat_kare/features/notifications/domain/repositories/notifications_repository.dart';
+import 'package:chat_kare/features/auth/presentation/controllers/auth_controller.dart';
 
 class NotificationsController extends GetxController {
   final isLoading = false.obs;
   final errorMessage = ''.obs;
 
   final notificationsRepository = Get.find<NotificationsRepository>();
+  final authController = Get.find<AuthController>();
+
   final _notifications = <NotificationsModel>[].obs;
   List<NotificationsModel> get notifications => _notifications.toList();
 
@@ -46,7 +49,20 @@ class NotificationsController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    getNotifications();
+
+    // Listen to user changes to fetch notifications on login and clear on logout
+    ever(authController.rxCurrentUser, (user) {
+      if (user != null) {
+        getNotifications();
+      } else {
+        _notifications.clear();
+      }
+    });
+
+    // Initial fetch if user is already logged in
+    if (authController.currentUser != null) {
+      getNotifications();
+    }
   }
 
   Future<void> getNotifications() async {

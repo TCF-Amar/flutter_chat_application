@@ -189,7 +189,7 @@ class AppRouter {
             final extras = state.extra as Map<String, dynamic>;
             final file = extras['file'] as File;
             final type = extras['type'] as MessageType;
-            final onSend = extras['onSend'] as Function(String);
+            final onSend = extras['onSend'] as Function(File, String);
 
             return MediaPreviewPage(file: file, type: type, onSend: onSend);
           },
