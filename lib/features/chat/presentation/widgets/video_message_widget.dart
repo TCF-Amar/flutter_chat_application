@@ -204,7 +204,7 @@ class _VideoMessageWidgetState extends State<VideoMessageWidget> {
             width: 250,
             height: 150,
             decoration: BoxDecoration(
-              color: Colors.black.withValues(alpha: 0.2),
+              // color: Colors.black.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(12),
             ),
             child: ClipRRect(

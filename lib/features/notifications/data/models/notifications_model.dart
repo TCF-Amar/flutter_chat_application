@@ -105,4 +105,35 @@ class NotificationsModel {
 
     return DateTime.now();
   }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+
+    return other is NotificationsModel &&
+        other.id == id &&
+        other.title == title &&
+        other.body == body &&
+        other.timestamp == timestamp &&
+        other.chatId == chatId &&
+        other.senderId == senderId &&
+        other.receiverId == receiverId &&
+        other.senderName == senderName &&
+        other.receiverName == receiverName &&
+        other.senderPhotoUrl == senderPhotoUrl;
+  }
+
+  @override
+  int get hashCode {
+    return id.hashCode ^
+        title.hashCode ^
+        body.hashCode ^
+        timestamp.hashCode ^
+        chatId.hashCode ^
+        senderId.hashCode ^
+        receiverId.hashCode ^
+        senderName.hashCode ^
+        receiverName.hashCode ^
+        senderPhotoUrl.hashCode;
+  }
 }

@@ -1,5 +1,6 @@
 import 'dart:ui';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 
 class CallBackground extends StatelessWidget {
@@ -185,6 +186,7 @@ class CallActionButtons extends StatelessWidget {
   final VoidCallback onAccept;
   final VoidCallback onToggleMute;
   final VoidCallback onToggleVideo;
+  final VoidCallback? onSwitchCamera;
 
   const CallActionButtons({
     super.key,
@@ -196,6 +198,7 @@ class CallActionButtons extends StatelessWidget {
     this.isVideoEnabled = true,
     required this.onToggleMute,
     required this.onToggleVideo,
+    this.onSwitchCamera,
   });
 
   @override
@@ -241,12 +244,18 @@ class CallActionButtons extends StatelessWidget {
                   isActive: isMuted,
                   onTap: onToggleMute,
                 ),
-                if (callType == CallType.video)
+                if (callType == CallType.video) ...[
                   CallControlButton(
                     icon: isVideoEnabled ? Icons.videocam : Icons.videocam_off,
                     isActive: !isVideoEnabled,
                     onTap: onToggleVideo,
                   ),
+                  CallControlButton(
+                    icon: Icons.cameraswitch,
+                    isActive: false,
+                    onTap: onSwitchCamera ?? () {},
+                  ),
+                ],
                 CallControlButton(
                   icon: Icons.volume_up,
                   isActive: false,
@@ -273,3 +282,71 @@ class CallActionButtons extends StatelessWidget {
 enum CallType { video, audio }
 
 enum CallStatus { incoming, outgoing, connected, ended }
+
+class CallMainVideoBackground extends StatelessWidget {
+  final bool isVideoEnabled;
+  final bool isCameraInitialized;
+  final CameraController? cameraController;
+  final String? photoUrl;
+
+  const CallMainVideoBackground({
+    super.key,
+    required this.isVideoEnabled,
+    required this.isCameraInitialized,
+    required this.cameraController,
+    required this.photoUrl,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (isVideoEnabled && isCameraInitialized && cameraController != null) {
+      return FittedBox(
+        fit: BoxFit.cover,
+        child: SizedBox(
+          width: cameraController!.value.previewSize?.height ?? 100,
+          height: cameraController!.value.previewSize?.width ?? 100,
+          child: CameraPreview(cameraController!),
+        ),
+      );
+    } else {
+      return CallBackground(photoUrl: photoUrl);
+    }
+  }
+}
+
+class CallPipVideo extends StatelessWidget {
+  final bool isVideoEnabled;
+  final bool isCameraInitialized;
+  final CameraController? cameraController;
+
+  const CallPipVideo({
+    super.key,
+    required this.isVideoEnabled,
+    required this.isCameraInitialized,
+    required this.cameraController,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (isVideoEnabled && isCameraInitialized && cameraController != null) {
+      return Positioned(
+        top: 40,
+        right: 20,
+        child: Container(
+          width: 100,
+          height: 150,
+          decoration: BoxDecoration(
+            border: Border.all(color: Colors.white, width: 2),
+            borderRadius: BorderRadius.circular(12),
+            color: Colors.black,
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(10),
+            child: CameraPreview(cameraController!),
+          ),
+        ),
+      );
+    }
+    return const SizedBox.shrink();
+  }
+}

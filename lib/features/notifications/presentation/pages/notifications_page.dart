@@ -15,7 +15,20 @@ class NotificationsPage extends StatelessWidget {
     final controller = Get.find<NotificationsController>();
 
     return AppScaffold(
-      appBar: DefaultAppBar(title: "Notifications", centerTitle: false),
+      appBar: DefaultAppBar(
+        title: "Notifications",
+        centerTitle: false,
+        actions: [
+          if (controller.notifications.isNotEmpty)
+            IconButton(
+              onPressed: () {
+                _showClearAllDialog(context, controller);
+              },
+              icon: const Icon(Icons.delete_sweep),
+              tooltip: 'Clear All',
+            ),
+        ],
+      ),
       body: RefreshIndicator(
         onRefresh: () async {
           await controller.getNotifications();
@@ -82,6 +95,34 @@ class NotificationsPage extends StatelessWidget {
           Icon(Icons.notifications_none, size: 64, color: Colors.grey[400]),
           const SizedBox(height: 16),
           const AppText('No notifications yet'),
+        ],
+      ),
+    );
+  }
+
+  void _showClearAllDialog(
+    BuildContext context,
+    NotificationsController controller,
+  ) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Clear All Notifications'),
+        content: const Text(
+          'Are you sure you want to delete all notifications?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              controller.clearAllNotifications();
+            },
+            child: const Text('Clear All', style: TextStyle(color: Colors.red)),
+          ),
         ],
       ),
     );

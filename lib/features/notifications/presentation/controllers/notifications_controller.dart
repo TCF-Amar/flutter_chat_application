@@ -78,12 +78,14 @@ class NotificationsController extends GetxController {
             isLoading.value = false;
           },
           (notifications) async {
+            // Filter out items that are currently pending deletion
+            if (_pendingDeletions.isNotEmpty) {
+              notifications.removeWhere(
+                (n) => _pendingDeletions.contains(n.id),
+              );
+            }
             _notifications.value = notifications;
             isLoading.value = false;
-            // await NotificationServices.instance.show(
-            //   title: notifications.last.senderName,
-            //   body: notifications.last.body,
-            // );
           },
         );
       },
@@ -118,53 +120,48 @@ class NotificationsController extends GetxController {
     return selectedNotifications.contains(notification);
   }
 
-  // Swipe actions
-  int? _deletedNotificationIndex;
-  NotificationsModel? _deletedNotification;
-
   Future<void> deleteNotification(NotificationsModel notification) async {
     try {
-      // Store the index before removing
-      _deletedNotificationIndex = _notifications.indexOf(notification);
-      _deletedNotification = notification;
-
       // Remove from local list immediately for smooth animation
       _notifications.remove(notification);
+
+      // Track this specific notification as pending deletion
+      final pendingId = notification.id;
+      
+      _pendingDeletions.add(pendingId);
 
       AppSnackbar.withAction(
         title: 'Notification deleted',
         message: 'Notification deleted',
         actionLabel: 'Undo',
         onActionPressed: () {
-          undoDelete();
+          undoDelete(notification);
         },
         duration: 3,
       );
 
       await Future.delayed(const Duration(seconds: 3));
 
-      // Only delete from Firestore if not undone
-      if (_deletedNotification == notification) {
+      // Check if this specific notification is still pending deletion (not undone)
+      if (_pendingDeletions.contains(pendingId)) {
         await notificationsRepository.deleteNotification(
-          notificationId: notification.id,
+          notificationId: pendingId,
         );
-
-        // Clear the stored values after permanent deletion
-        _deletedNotification = null;
-        _deletedNotificationIndex = null;
+        _pendingDeletions.remove(pendingId);
       }
     } catch (e) {
       // Re-add if deletion fails
-      if (_deletedNotificationIndex != null) {
-        _notifications.insert(_deletedNotificationIndex!, notification);
-      } else {
+      if (!_notifications.contains(notification)) {
         _notifications.add(notification);
+        _notifications.sort((a, b) => b.timestamp.compareTo(a.timestamp));
       }
-      _deletedNotification = null;
-      _deletedNotificationIndex = null;
+      _pendingDeletions.remove(notification.id);
       AppSnackbar.error(message: 'Failed to delete notification');
     }
   }
+
+  // Set of IDs that are currently in the "Undo" window
+  final Set<String> _pendingDeletions = <String>{};
 
   // clear all notifications
   Future<void> clearAllNotifications() async {
@@ -234,23 +231,13 @@ class NotificationsController extends GetxController {
   }
 
   // undo delete
-  Future<void> undoDelete() async {
-    try {
-      if (_deletedNotification != null && _deletedNotificationIndex != null) {
-        // Insert at the original index
-        _notifications.insert(
-          _deletedNotificationIndex!,
-          _deletedNotification!,
-        );
-
-        // Clear the stored values
-        _deletedNotification = null;
-        _deletedNotificationIndex = null;
-
-        AppSnackbar.success(message: 'Notification restored');
-      }
-    } catch (e) {
-      AppSnackbar.error(message: 'Failed to restore notification');
+  // undo delete
+  void undoDelete(NotificationsModel notification) {
+    if (_pendingDeletions.contains(notification.id)) {
+      _pendingDeletions.remove(notification.id);
+      _notifications.add(notification);
+      _notifications.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+      AppSnackbar.success(message: 'Notification restored');
     }
   }
 

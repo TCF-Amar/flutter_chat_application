@@ -19,7 +19,7 @@ class NotificationTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Dismissible(
-      key: ObjectKey(notification),
+      key: Key(notification.id),
       background: const DismissBackground(),
       secondaryBackground: const DismissSecondaryBackground(),
       confirmDismiss: (direction) async {

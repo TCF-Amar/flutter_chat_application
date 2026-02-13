@@ -208,7 +208,6 @@ class AppSnackbar {
     String title = 'Notice',
     Color? backgroundColor,
     int duration = 5,
-    SnackPosition position = SnackPosition.BOTTOM,
   }) {
     _show(
       message: message,

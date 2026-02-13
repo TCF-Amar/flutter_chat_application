@@ -182,7 +182,7 @@ class _ChatAppBarWidgetState extends State<ChatAppBarWidget> {
                       name: widget.contact.displayName.toString(),
                       photoUrl: widget.contact.photoUrl,
                       callType: CallType.video,
-                      initialStatus: CallStatus.outgoing,
+                      initialStatus: CallStatus.incoming,
                     );
                   },
                 ),
